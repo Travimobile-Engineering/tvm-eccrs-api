@@ -41,7 +41,8 @@ class AuthenticateViaAuthService
         $data = Cache::get($cacheKey);
 
         if (!$data) {
-            $response = $response = $this->auth->request('get', '/auth/validate', [], $token);
+            $url = config('services.auth_service.url') . '/auth/validate';
+            $response = $response = $this->auth->request('get', $url, [], $token);
             $data = $response->json();
 
             if ($response->successful() && ($data['data']['valid'] ?? false)) {

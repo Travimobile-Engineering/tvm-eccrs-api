@@ -16,14 +16,12 @@ class Auth
             $client = $client->withToken($token);
         }
 
-        $url = config('services.auth_service.url') . $endpoint;
-
         return match (strtolower($method)) {
-            'get'    => $client->get($url, $data),
-            'post'   => $client->post($url, $data),
-            'put'    => $client->put($url, $data),
-            'patch'  => $client->patch($url, $data),
-            'delete' => $client->delete($url, $data),
+            'get'    => $client->get($endpoint, $data),
+            'post'   => $client->post($endpoint, $data),
+            'put'    => $client->put($endpoint, $data),
+            'patch'  => $client->patch($endpoint, $data),
+            'delete' => $client->delete($endpoint, $data),
             default  => throw new \InvalidArgumentException("Unsupported method [$method]"),
         };
     }

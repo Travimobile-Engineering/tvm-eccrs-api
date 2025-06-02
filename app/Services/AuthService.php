@@ -11,7 +11,9 @@ class AuthService
 
     public function authLogin($request)
     {
-        $response = $this->auth->request('post', '/auth/login', [
+        $url = config('services.auth_service.url') . '/auth/login';
+
+        $response = $this->auth->request('post', $url, [
             'email' => $request->input('email'),
             'password' => $request->input('password'),
         ]);
