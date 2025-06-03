@@ -8,3 +8,13 @@ if(!function_exists('calculatePercentageDifference')){
         return $diff > 0 ? $diff : 0;
     }
 }
+
+if (function_exists('authUser')) {
+    function authUser() {
+        $user = request()->get('auth_user');
+        return (object) $user;
+    }
+}
+
+
+
