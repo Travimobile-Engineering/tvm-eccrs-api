@@ -13,8 +13,10 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('auth')
 ->controller(AuthController::class)
-->group(function () {
-    Route::post('/login', 'authLogin');
+    ->group(function () {
+        Route::post('/login', 'authLogin');
+        Route::post('/forgot-password', 'forgotPassword');
+        Route::post('/reset-password', 'resetPassword');
 });
 
 Route::prefix('user')
