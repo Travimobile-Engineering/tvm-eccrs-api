@@ -45,7 +45,11 @@ class Trip extends Model
         return $this->hasOne(Manifest::class);
     }
 
-    public function booking(){
+    public function bookings(){
         return $this->hasMany(TripBooking::class);
+    }
+
+    public function vehicle(){
+        return $this->belongsTo(Vehicle::class);
     }
 }

@@ -37,4 +37,8 @@ class Vehicle extends Model
     public function driver(){
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function company(){
+        return $this->belongsTo(TransitCompany::class, 'company_id');
+    }
 }

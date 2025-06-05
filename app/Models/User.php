@@ -57,11 +57,11 @@ class User extends Authenticatable
         ];
     }
 
-    public function tripBooking(){
+    public function tripBookings(){
         return $this->hasMany(TripBooking::class, 'user_id', 'id');
     }
 
-    public function watchlist(){
+    public function watchlists(){
         return $this->hasMany(WatchList::class, 'email', 'email');
     }
 
@@ -69,7 +69,7 @@ class User extends Authenticatable
         return $this->hasOne(Vehicle::class);
     }
 
-    public function document(){
+    public function documents(){
         return $this->hasMany(Document::class);
     }
 
@@ -77,7 +77,7 @@ class User extends Authenticatable
         return $this->hasOne(TransitCompanyUnion::class, 'id', 'transit_company_union_id');
     }
 
-    public function trip(){
+    public function trips(){
         return $this->hasMany(Trip::class);
     }
 }

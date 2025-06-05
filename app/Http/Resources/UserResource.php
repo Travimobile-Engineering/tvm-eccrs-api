@@ -40,7 +40,7 @@ class UserResource extends JsonResource
             "profile_photo" => $this->profile_photo,
             "driver_verified" => $this->when($this->relationLoaded('union'), [false, true][$this->driver_verified]),
             "union" => $this->when($this->relationLoaded('union') && !is_null($this->getRelation('union')), $this->union?->name),
-            "documents" => $this->when($this->relationLoaded('document') && !is_null($this->getRelation('document')), $this->document->map(function($doc){
+            "documents" => $this->when($this->relationLoaded('document') && !is_null($this->getRelation('document')), $this->document?->map(function($doc){
                 return [
                     "type" => $doc->type,
                     "number" => $doc->number,
@@ -72,7 +72,7 @@ class UserResource extends JsonResource
             }),
             "activities" => $this->when(
                 !empty($this->tripBooking->trip), 
-                $this->tripbooking->map(function($booking){
+                $this->tripbooking?->map(function($booking){
                     return [
                         "title" => ucwords($booking->trip?->means . " Trip"),
                         "desc" => "Booked a ".$booking->trip?->means 
@@ -84,7 +84,7 @@ class UserResource extends JsonResource
                     ];
                 })
             ),
-            "manifests" => $this->when($this->relationLoaded('trip') && $this->getRelation('trip')->count() > 0, $this->trip->map(function($t){
+            "manifests" => $this->when($this->relationLoaded('trip') && $this->getRelation('trip')->count() > 0, $this->trip?->map(function($t){
                 return [
                     "trip_uuid" => $t->uuid,
                     "route" => $t->departureCity->state->name .' to '. $t->destinationCity->state->name,
@@ -93,8 +93,8 @@ class UserResource extends JsonResource
                 ];
             })),
             "watchlists" => $this->when(
-                $this->watchlist->isNotEmpty(), 
-                $this->watchlist->map(function($watchlist){
+                $this->watchlist?->isNotEmpty(), 
+                $this->watchlist?->map(function($watchlist){
                     return [
                         "full_name" => $watchlist->full_name,
                         "phone" => $watchlist->phone,

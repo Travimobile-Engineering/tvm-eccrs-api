@@ -36,19 +36,17 @@ class TransportResource extends JsonResource
             "vehicles" => $this->vehicles->count(),
             "drivers" => $this->when($this->relationLoaded('drivers'), fn() => $this->getRelation('drivers')->count()),
             "bookings" => $this->when($this->relationLoaded('bookings'), fn() => $this->bookings->count()),
-            "staffs" => $this->when($this->relationLoaded('drivers'), function() {
-                $this->drivers->map(function($driver){
-                        return [
-                            "first_name" => $driver->driver->first_name,
-                            "last_name" => $driver->driver->last_name,
-                            "phone_number" => $driver->driver->phone_number,
-                            "email" => $driver->driver->email,
-                            "profile_photo_url" => $driver->driver->profile_photo_url,
-                            "status" => $driver->driver->status,
-                            "date_registered" => $driver->driver->created_at,
-                        ];
-                    });
-                }
+            "staffs" => $this->when($this->relationLoaded('drivers'), $this->drivers->map(function($driver){
+                    return [
+                        "first_name" => $driver->driver->first_name,
+                        "last_name" => $driver->driver->last_name,
+                        "phone_number" => $driver->driver->phone_number,
+                        "email" => $driver->driver->email,
+                        "profile_photo_url" => $driver->driver->profile_photo_url,
+                        "status" => $driver->driver->status,
+                        "date_registered" => $driver->driver->created_at,
+                    ];
+                })
             ),
         ];
         return $data;

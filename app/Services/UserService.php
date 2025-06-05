@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Zones;
+use App\Models\Trip;
 use App\Models\User;
+use App\Models\State;
+
 use App\Models\TripBooking;
 use App\Traits\HttpResponse;
 use App\Models\TransitCompany;
-
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Schema;
 use function App\Helpers\calculatePercentageDifference;
@@ -16,16 +19,16 @@ class UserService
     use HttpResponse;
 
     public function getTravellers(){
-        $travellers = User::whereHas('tripBooking')->paginate(25);
+        $travellers = User::whereHas('tripBookings')->paginate(25);
         return UserResource::collection($travellers);
     }
 
     public function getUserDetail($id){
         $user = User::with([
             'vehicle.brand',
-            'watchlist',
-            'trip' => fn($q) => $q->with(['manifest', 'booking', 'departureCity.state', 'destinationCity.state']),
-            'tripBooking.trip' => fn($query) => $query->with(['transitCompany', 'departureCity.state', 'destinationCity.state']),
+            'watchlists',
+            'trips' => fn($q) => $q->with(['manifest', 'booking', 'departureCity.state', 'destinationCity.state']),
+            'tripBookings.trip' => fn($query) => $query->with(['transitCompany', 'departureCity.state', 'destinationCity.state']),
         ])->findOrFail($id);
         return $this->success(new UserResource($user));
     }
@@ -38,7 +41,7 @@ class UserService
     }
 
     public function  getDrivers(){
-        $drivers = User::with(['document', 'union',])->whereHas('vehicle')->paginate(25);
+        $drivers = User::with(['documents', 'union',])->whereHas('vehicle')->paginate(25);
         return UserResource::collection($drivers);
     }
 
@@ -95,7 +98,55 @@ class UserService
                 "train" => TransitCompany::where('type', 'rail')->count(),
                 "air" => TransitCompany::where('type', 'air')->count(),
                 "sea" => TransitCompany::where('type', 'sea')->count()
+            ],
+            "activities" => [
+                'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL),
+                'north_east' => $this->getZoneActivities(Zones::NORTHEAST),
+                'north_west' => $this->getZoneActivities(Zones::NORTHWEST),
+                'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH),
+                'south_east' => $this->getZoneActivities(Zones::SOUTHEAST),
+                'south_west' => $this->getZoneActivities(Zones::SOUTHWEST),
             ]
         ]);
+    }
+
+    public function getStateActivities(){
+        $states = State::with('cities')->get();
+        $states = $states->map(function($state){
+            return [
+                "state" => $state->name,
+                "state_id" => $state->id,
+                "cities" => $state->cities->map(function($city){
+                    return $city->id;
+                })
+            ];
+        });
+
+        $activities = $states->map(function($state){
+            $trips = Trip::with('bookings')->whereIn('destination', $state['cities'])->orWhereIn('departure', $state['cities'])->get();
+            $bookings = $trips->map(fn($trip) => $trip->bookings);
+
+            $transitCompanies = TransitCompany::with('drivers')->where('state', $state['state'])->get();
+            $drivers = $transitCompanies->map(function($transitCompany){
+                    return $transitCompany->drivers->count();
+                })->toArray();
+
+            return [
+                $state['state'] => [
+                    'travelers' => $bookings->count(),
+                    'drivers' => array_sum($drivers),
+                    'transport_companies' => $transitCompanies->count(),
+                ] 
+            ];
+        });
+
+        return $this->success($activities);
+    }
+
+    private function getZoneActivities(array $zone){
+        $cities = State::getZonecities($zone);
+        $trips = Trip::with('bookings')->whereIn('departure', $cities)->orWhereIn('destination', $cities)->get();
+        $bookings = $trips->map(fn($trip) => $trip->bookings);
+        return $bookings->count();
     }
 }

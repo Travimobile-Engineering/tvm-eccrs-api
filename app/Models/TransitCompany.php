@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TransitCompany extends Model
 {
@@ -31,7 +32,7 @@ class TransitCompany extends Model
     }
     
     public function drivers(){
-        return $this->hasMany(Vehicle::class, 'company_id')->whereNotNull('user_id');
+        return $this->hasManyThrough(User::class, Vehicle::class, 'company_id', 'id', 'id', 'user_id');
     }
 
     public function bookings(){

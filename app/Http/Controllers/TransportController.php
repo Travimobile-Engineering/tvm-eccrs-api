@@ -18,4 +18,20 @@ class TransportController extends Controller
     public function getCompanyDetails($id){
         return $this->service->getCompanyDetails($id);
     }
+
+    public function getDrivers($id){
+        return $this->service->getDrivers($id);
+    }
+
+    public function getVehicles(){
+        return $this->service->getVehicles();
+    }
+
+    public function getVehicle($id){
+        return $this->service->getVehicle($id);
+    }
+
+    public function getTrips($id, $status = null){
+        return $this->service->getTrips($id, $status);
+    }
 }
