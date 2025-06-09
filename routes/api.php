@@ -15,11 +15,13 @@ Route::prefix('eccrs')
         Route::get('/user', function (Request $request) {
             return $request->user();
         })->middleware('auth:sanctum');
-        
+
         Route::prefix('auth')
         ->controller(AuthController::class)
         ->group(function () {
             Route::post('/login', 'authLogin');
+            Route::post('/forgot-password', 'forgotPassword');
+            Route::post('/reset-password', 'resetPassword');
         });
         
         Route::prefix('user')
@@ -44,4 +46,5 @@ Route::prefix('eccrs')
                 Route::get('/{id}/vehicle', 'getVehicle');
                 Route::get('/{id}/trips/{status?}', 'getTrips');
             });
-    });
+
+});
