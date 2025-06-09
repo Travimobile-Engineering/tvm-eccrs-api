@@ -1,16 +1,24 @@
 <?php
 
-namespace App\Trait;
+namespace App\Traits;
 
-trait HttpResponses
+trait HttpResponse
 {
-    protected function success($data, $message = null, $code = 200){
-		return response()->json([
-			'status' => true,
-			'message' => $message,
-			'data' => $data
-		], $code);
-	}
+    public function success(mixed $data, string $message = '', int $code = 200){
+        return response()->json([
+            'status' => true,
+            'message' => $message,
+            'data' => $data,
+        ], $code);
+    }
+
+    public function error($data, string $message, int $code = 500){
+        return response()->json([
+            'status' => false,
+            'message' => $message,
+            'data' => $data,
+        ], $code);
+    }
 
     protected function withPagination($collection, $message = null, $code = 200)
     {
@@ -28,12 +36,4 @@ trait HttpResponses
             ],
         ], $code);
     }
-
-	protected function error($data, $message = null, $code = 500){
-		return response()->json([
-			'status' => false,
-			'message' => $message,
-			'data' => $data
-		], $code);
-	}
 }

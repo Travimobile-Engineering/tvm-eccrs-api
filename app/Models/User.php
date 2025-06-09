@@ -17,10 +17,21 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+
+    protected $connection = 'transport';
+
     protected $fillable = [
-        'name',
-        'email',
+        "uuid",
+        "first_name",
+        "last_name",
         'password',
+        "phone_number",
+        'email',
+        "nin",
+        "next_of_kin_full_name",
+        "email_verified",
+        "verification_code",
+        "status",
     ];
 
     /**
@@ -44,5 +55,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function tripBookings(){
+        return $this->hasMany(TripBooking::class, 'user_id', 'id');
+    }
+
+    public function watchlists(){
+        return $this->hasMany(WatchList::class, 'email', 'email');
+    }
+
+    public function vehicle(){
+        return $this->hasOne(Vehicle::class);
+    }
+
+    public function documents(){
+        return $this->hasMany(Document::class);
+    }
+
+    public function union(){
+        return $this->hasOne(TransitCompanyUnion::class, 'id', 'transit_company_union_id');
+    }
+
+    public function trips(){
+        return $this->hasMany(Trip::class);
     }
 }
