@@ -19,8 +19,7 @@ class UserService
         return $this->withPagination($travellers->toResourceCollection(), 'Travellers retrieved successfully');
     }
 
-    public function getUserDetail($id)
-    {
+    public function getUserDetail($id){
         $user = User::with([
             'vehicle.brand',
             'watchlists',
