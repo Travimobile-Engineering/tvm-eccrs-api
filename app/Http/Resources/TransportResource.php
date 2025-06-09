@@ -34,9 +34,9 @@ class TransportResource extends JsonResource
             "date_registered" => $this->created_at,
             "status" => ["unverified", "verified"][$this->ev],
             "vehicles" => $this->vehicles->count(),
-            "drivers" => $this->when($this->relationLoaded('drivers'), fn() => $this->getRelation('drivers')->count()),
-            "bookings" => $this->when($this->relationLoaded('bookings'), fn() => $this->bookings->count()),
-            "staffs" => $this->when($this->relationLoaded('drivers'), $this->drivers->map(function($driver){
+            "drivers" => $this->whenLoaded('drivers', fn() => $this->getRelation('drivers')->count()),
+            "bookings" => $this->whenLoaded('bookings', fn() => $this->bookings->count()),
+            "staffs" => $this->whenLoaded('drivers', $this->drivers->map(function($driver){
                     return [
                         "first_name" => $driver->driver->first_name,
                         "last_name" => $driver->driver->last_name,

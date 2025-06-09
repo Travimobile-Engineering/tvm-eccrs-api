@@ -27,7 +27,7 @@ class TripResource extends JsonResource
             "destination" =>[
                 "state" => $this->destinationCity->state->name,
                 "city" => $this->destinationCity->name,
-            ] ,
+            ],
             "vehicle" => [
                 "name" => $this->vehicle->name,
                 "brand" => $this->vehicle->brand?->name,

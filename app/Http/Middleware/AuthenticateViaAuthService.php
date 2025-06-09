@@ -6,13 +6,13 @@ use App\Services\Auth;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Trait\HttpResponses;
+use App\Traits\HttpResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class AuthenticateViaAuthService
 {
-    use HttpResponses;
+    use HttpResponse;
 
     public function __construct(
         protected Auth $auth

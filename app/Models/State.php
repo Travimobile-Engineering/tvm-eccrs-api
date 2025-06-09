@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Zones;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 
 class State extends Model
@@ -26,5 +27,16 @@ class State extends Model
         return $this->hasMany(RouteSubregion::class);
     }
 
+    public function departingTrips(){
+        return $this->hasManyThrough(Trip::class, RouteSubregion::class, 'id', 'departure', 'id');
+    }
+
+    public function arrivingTrips(){
+        return $this->hasManyThrough(Trip::class, RouteSubregion::class, 'id', 'destination', 'id');
+    }
+
+    public function transitCompanies(){
+        return $this->hasMany(TransitCompany::class, 'state', 'name');
+    }
 }
 

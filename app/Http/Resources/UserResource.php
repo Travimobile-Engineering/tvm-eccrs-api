@@ -38,7 +38,7 @@ class UserResource extends JsonResource
             "date_registered" => $this->created_at,
             "avatar_url" => $this->avatar_url,
             "profile_photo" => $this->profile_photo,
-            "driver_verified" => $this->when($this->relationLoaded('union'), [false, true][$this->driver_verified]),
+            "driver_verified" => $this->whenLoaded('union', [false, true][$this->driver_verified]),
             "union" => $this->when($this->relationLoaded('union') && !is_null($this->getRelation('union')), $this->union?->name),
             "documents" => $this->when($this->relationLoaded('document') && !is_null($this->getRelation('document')), $this->document?->map(function($doc){
                 return [
@@ -71,7 +71,7 @@ class UserResource extends JsonResource
                 ];
             }),
             "activities" => $this->when(
-                !empty($this->tripBooking->trip), 
+                $this->tripBooking->trip && $this->tripBooking->trip->isNotEmpty(), 
                 $this->tripbooking?->map(function($booking){
                     return [
                         "title" => ucwords($booking->trip?->means . " Trip"),

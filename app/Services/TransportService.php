@@ -17,32 +17,32 @@ class TransportService
 
     public function getCompanies(){
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])->paginate(25);
-        return TransportResource::collection($companies);
+        return $this->withPagination(TransportResource::collection($companies));
     }
     public function getCompanyDetails($id){
         $company = TransitCompany::with( 'bookings', 'drivers.driver')->findOrFail($id);
-        return $this->success(new TransportResource($company));
+        return $this->success(new TransportResource($company), '');
     }
 
     public function getDrivers($id){
         $company = TransitCompany::with(['drivers' => fn($q) => $q->with('union', 'documents')])->findOrFail( $id);
-        return UserResource::collection($company->drivers);
+        return $this->success(UserResource::collection($company->drivers), '');
     }
 
     public function getVehicles(){
         $vehicles = Vehicle::with('brand', 'driver.documents', 'company')->where('company_id', request()->id)->paginate(25);
-        return VehicleResource::collection($vehicles);
+        return $this->withPagination(VehicleResource::collection($vehicles));
     }
 
     public function getVehicle($id){
         $vehicle = Vehicle::with('brand', 'driver.documents', 'company')->findOrFail($id);
-        return $this->success(new VehicleResource($vehicle));
+        return $this->success(new VehicleResource($vehicle), '');
     }
 
     public function getTrips($id, $status = null){
         $trips = Trip::with(['transitCompany', 'departureCity.state', 'destinationCity.state', 'vehicle' => fn($q) => $q->with('driver', 'brand')])->where('transit_company_id', $id);
-            if($status){ $trips->where('status', $status); }
-        return TripResource::collection($trips->paginate(25));
+            when($status, $trips->where('status', $status));
+        return $this->withPagination(TripResource::collection($trips->paginate(25)));
         
 
     }

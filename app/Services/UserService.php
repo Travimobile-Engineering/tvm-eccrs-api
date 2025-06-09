@@ -20,7 +20,7 @@ class UserService
 
     public function getTravellers(){
         $travellers = User::whereHas('tripBookings')->paginate(25);
-        return UserResource::collection($travellers);
+        return $this->withPagination(UserResource::collection($travellers));
     }
 
     public function getUserDetail($id){
@@ -30,14 +30,14 @@ class UserService
             'trips' => fn($q) => $q->with(['manifest', 'booking', 'departureCity.state', 'destinationCity.state']),
             'tripBookings.trip' => fn($query) => $query->with(['transitCompany', 'departureCity.state', 'destinationCity.state']),
         ])->findOrFail($id);
-        return $this->success(new UserResource($user));
+        return $this->success(new UserResource($user), '');
     }
 
     public function getAgents(){
         $agents = User::where('agent_id', '!=', null)
             ->where('agent_id', '!=', '')
             ->paginate(25);
-        return UserResource::collection($agents);
+        return $this->withPagination(UserResource::collection($agents), '');
     }
 
     public function  getDrivers(){
@@ -46,10 +46,10 @@ class UserService
     }
 
     public function stats(){
-        $firstDayOfLastMonth = now()->parse('first day of last month 00:00:00');
-        $lastDayOfLastMonth = now()->parse('last day of last month 23:59:59');
-        $firstDayOfThisMonth = now()->parse('first day of this month 00:00:00');
-        $today = now()->parse('today 00:00:00');
+        $firstDayOfLastMonth = now()->subMonth()->startOfMonth();
+        $lastDayOfLastMonth = now()->subMonth()->endOfMonth();
+        $firstDayOfThisMonth = now()->startOfMonth();
+        $today = now()->startOfDay();
 
         $lastMonthTripBooking = TripBooking::whereBetween('created_at', [$firstDayOfLastMonth, $lastDayOfLastMonth])->count();
         $thisMonthTripBooking = TripBooking::whereBetween('created_at', [$firstDayOfThisMonth, $today])->count();
@@ -100,42 +100,28 @@ class UserService
                 "sea" => TransitCompany::where('type', 'sea')->count()
             ],
             "activities" => [
-                'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL),
-                'north_east' => $this->getZoneActivities(Zones::NORTHEAST),
-                'north_west' => $this->getZoneActivities(Zones::NORTHWEST),
-                'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH),
-                'south_east' => $this->getZoneActivities(Zones::SOUTHEAST),
-                'south_west' => $this->getZoneActivities(Zones::SOUTHWEST),
+                'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL->states()),
+                'north_east' => $this->getZoneActivities(Zones::NORTHEAST->states()),
+                'north_west' => $this->getZoneActivities(Zones::NORTHWEST->states()),
+                'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH->states()),
+                'south_east' => $this->getZoneActivities(Zones::SOUTHEAST->states()),
+                'south_west' => $this->getZoneActivities(Zones::SOUTHWEST->states()),
             ]
-        ]);
+        ], '');
     }
 
     public function getStateActivities(){
-        $states = State::with('cities')->get();
-        $states = $states->map(function($state){
-            return [
-                "state" => $state->name,
-                "state_id" => $state->id,
-                "cities" => $state->cities->map(function($city){
-                    return $city->id;
-                })
-            ];
-        });
-
+        $states = State::with('cities', 'departingTrips.bookings', 'arrivingTrips.bookings', 'transitCompanies.drivers')->get();
         $activities = $states->map(function($state){
-            $trips = Trip::with('bookings')->whereIn('destination', $state['cities'])->orWhereIn('departure', $state['cities'])->get();
-            $bookings = $trips->map(fn($trip) => $trip->bookings);
-
-            $transitCompanies = TransitCompany::with('drivers')->where('state', $state['state'])->get();
-            $drivers = $transitCompanies->map(function($transitCompany){
-                    return $transitCompany->drivers->count();
-                })->toArray();
+            $departingBookings = $state->departingTrips->map(fn($trip) => $trip->bookings);
+            $arrivingBookings = $state->arrivingTrips->map(fn($trip) => $trip->bookings);
+            $drivers = $state->transitCompanies->map(fn($company) => $company->drivers);
 
             return [
-                $state['state'] => [
-                    'travelers' => $bookings->count(),
-                    'drivers' => array_sum($drivers),
-                    'transport_companies' => $transitCompanies->count(),
+                $state->name => [
+                    'travelers' => $departingBookings->count() + $arrivingBookings->count(),
+                    'transport_companies' => $state->transitCompanies->count(),
+                    'drivers' => $drivers->count(),
                 ] 
             ];
         });
