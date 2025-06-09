@@ -3,12 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Services\Auth;
+use App\Traits\HttpResponse;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
-use App\Traits\HttpResponse;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticateViaAuthService
 {
@@ -16,8 +15,7 @@ class AuthenticateViaAuthService
 
     public function __construct(
         protected Auth $auth
-    )
-    {}
+    ) {}
 
     /**
      * Handle an incoming request.
@@ -32,16 +30,16 @@ class AuthenticateViaAuthService
             return $this->error(null, 'Service name not configured', 500);
         }
 
-        if (!$token) {
+        if (! $token) {
             return $this->error(null, 'Token missing', 401);
         }
 
-        $cacheKey = 'auth_token_valid:' . sha1($token);
+        $cacheKey = 'auth_token_valid:'.sha1($token);
 
         $data = Cache::get($cacheKey);
 
-        if (!$data) {
-            $url = config('services.auth_service.url') . '/auth/validate';
+        if (! $data) {
+            $url = config('services.auth_service.url').'/auth/validate';
             $response = $response = $this->auth->request('get', $url, [], $token);
             $data = $response->json();
 
@@ -50,12 +48,13 @@ class AuthenticateViaAuthService
             }
         }
 
-        if (!($data['status'] ?? false)) {
+        if (! ($data['status'] ?? false)) {
             return $this->error(null, "Unauthenticated! {$data['message']}", 401);
         }
 
         if (($data['data']['valid'] ?? false)) {
             $request->merge(['auth_user' => $data['data']['user'] ?? null]);
+
             return $next($request);
         }
 

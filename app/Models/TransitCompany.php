@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TransitCompany extends Model
 {
@@ -13,29 +14,50 @@ class TransitCompany extends Model
     protected $connection = 'transport';
 
     protected $fillable = [
-        "user_id",
-        "name",
-        "union_states_chapter",
-        "type",
+        'user_id',
+        'name',
+        'union_states_chapter',
+        'type',
     ];
 
-    public function union(){
+    public function union()
+    {
         return $this->belongsTo(TransitCompanyUnion::class, 'union_id');
     }
 
-    public function unionState(){
+    public function unionState()
+    {
         return $this->belongsTo(State::class, 'union_states_chapter');
     }
 
-    public function vehicles(){
+    public function vehicles()
+    {
         return $this->hasMany(Vehicle::class, 'company_id');
     }
-    
-    public function drivers(){
+
+    public function drivers()
+    {
         return $this->hasManyThrough(User::class, Vehicle::class, 'company_id', 'id', 'id', 'user_id');
     }
 
-    public function bookings(){
+    public function bookings()
+    {
         return $this->hasManyThrough(TripBooking::class, Trip::class, 'transit_company_id', 'trip_id');
+    }
+
+    #[Scope]
+    public function scopeSignedUpBetween(Builder $query, $from, $to): void
+    {
+        $query->whereBetween('created_at', [$from, $to]);
+    }
+
+    #[Scope]
+    public function scopeCountByType(Builder $query): array
+    {
+        return $query
+            ->selectRaw('type, COUNT(*) as total')
+            ->groupBy('type')
+            ->pluck('total', 'type')
+            ->toArray();
     }
 }

@@ -4,7 +4,8 @@ namespace App\Traits;
 
 trait HttpResponse
 {
-    public function success(mixed $data, string $message = '', int $code = 200){
+    public function success($data, ?string $message = null, int $code = 200)
+    {
         return response()->json([
             'status' => true,
             'message' => $message,
@@ -12,7 +13,8 @@ trait HttpResponse
         ], $code);
     }
 
-    public function error($data, string $message, int $code = 500){
+    public function error($data, ?string $message = null, int $code = 500)
+    {
         return response()->json([
             'status' => false,
             'message' => $message,
@@ -20,7 +22,7 @@ trait HttpResponse
         ], $code);
     }
 
-    protected function withPagination($collection, $message = null, $code = 200)
+    protected function withPagination($collection, ?string $message = null, $code = 200)
     {
         return response()->json([
             'status' => true,

@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum Zones :string
+enum Zones: string
 {
     case NORTHCENTRAL = 'north-central';
     case NORTHEAST = 'north-east';
@@ -11,8 +11,9 @@ enum Zones :string
     case SOUTHWEST = 'south-west';
     case SOUTHSOUTH = 'south-south';
 
-    public function states(){
-        return match($this){
+    public function states()
+    {
+        return match ($this) {
             self::NORTHCENTRAL => ['Benue', 'FCT', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Plateau'],
             self::NORTHEAST => ['Adamawa', 'Bauchi', 'Borno', 'Gombe', 'Taraba', 'Yobe'],
             self::NORTHWEST => ['Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Sokoto', 'Zamfara'],

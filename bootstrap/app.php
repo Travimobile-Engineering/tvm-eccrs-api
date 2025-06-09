@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'auth.service' => \App\Http\Middleware\AuthenticateViaAuthService::class,
+            'validate.header' => \App\Http\Middleware\ValidateHeader::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
