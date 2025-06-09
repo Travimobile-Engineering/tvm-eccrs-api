@@ -7,8 +7,8 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 
 
-// Route::prefix('eccrs')
-//     ->group(function(){
+Route::prefix('eccrs')
+    ->group(function(){
 
         Route::get('/health-check', fn() => response()->json([], 200));
 
@@ -44,4 +44,4 @@ use Illuminate\Http\Request;
                 Route::get('/{id}/vehicle', 'getVehicle');
                 Route::get('/{id}/trips/{status?}', 'getTrips');
             });
-    // });
+    });
