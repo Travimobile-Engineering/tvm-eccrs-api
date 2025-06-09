@@ -13,8 +13,7 @@ class UserService
 {
     use HttpResponse;
 
-    public function getTravellers()
-    {
+    public function getTravellers(){
         $travellers = User::whereHas('tripBookings')->paginate(25);
 
         return $this->withPagination($travellers->toResourceCollection(), 'Travellers retrieved successfully');
