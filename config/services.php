@@ -40,4 +40,11 @@ return [
         'name' => 'eccrs',
     ],
 
+    'allowed_services' => [
+        'auth',
+        'transport',
+        'hotel',
+        'eccrs',
+    ],
+
 ];
