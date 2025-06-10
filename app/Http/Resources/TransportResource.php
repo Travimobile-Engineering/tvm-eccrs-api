@@ -46,7 +46,7 @@ class TransportResource extends JsonResource
                         "status" => $driver->driver?->status,
                         "date_registered" => $driver->driver?->created_at,
                     ];
-                })
+                }))
         ];
     }
 }

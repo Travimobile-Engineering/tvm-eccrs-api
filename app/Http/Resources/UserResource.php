@@ -59,7 +59,7 @@ class UserResource extends JsonResource
                     'status' => $vehicle->status,
                     'date_registered' => $vehicle->created_at,
                 ];
-            }),
+            })),
             'activities' => $this->whenLoaded('tripBooking', fn () => $this->tripBooking->map(function ($booking) {
                 $trip = $booking->trip;
 
