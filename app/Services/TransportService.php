@@ -20,7 +20,7 @@ class TransportService
         return $this->withPagination(TransportResource::collection($companies));
     }
     public function getCompanyDetails($id){
-        $company = TransitCompany::with( 'bookings', 'drivers.driver')->findOrFail($id);
+        $company = TransitCompany::with( 'bookings', 'drivers')->findOrFail($id);
         return $this->success(new TransportResource($company), '');
     }
 

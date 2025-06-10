@@ -38,13 +38,13 @@ class TransportResource extends JsonResource
             "bookings" => $this->whenLoaded('bookings', fn() => $this->bookings->count()),
             "staffs" => $this->whenLoaded('drivers', $this->drivers->map(function($driver){
                     return [
-                        "first_name" => $driver->driver->first_name,
-                        "last_name" => $driver->driver->last_name,
-                        "phone_number" => $driver->driver->phone_number,
-                        "email" => $driver->driver->email,
-                        "profile_photo_url" => $driver->driver->profile_photo_url,
-                        "status" => $driver->driver->status,
-                        "date_registered" => $driver->driver->created_at,
+                        "first_name" => $driver->driver?->first_name,
+                        "last_name" => $driver->driver?->last_name,
+                        "phone_number" => $driver->driver?->phone_number,
+                        "email" => $driver->driver?->email,
+                        "profile_photo_url" => $driver->driver?->profile_photo_url,
+                        "status" => $driver->driver?->status,
+                        "date_registered" => $driver->driver?->created_at,
                     ];
                 })
             ),

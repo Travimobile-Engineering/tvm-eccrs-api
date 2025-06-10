@@ -71,7 +71,7 @@ class UserResource extends JsonResource
                 ];
             }),
             "activities" => $this->when(
-                $this->tripBooking->trip && $this->tripBooking->trip->isNotEmpty(), 
+                $this->tripBooking?->trip && $this->tripBooking?->trip->isNotEmpty(), 
                 $this->tripbooking?->map(function($booking){
                     return [
                         "title" => ucwords($booking->trip?->means . " Trip"),
