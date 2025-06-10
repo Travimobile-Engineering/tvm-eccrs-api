@@ -59,7 +59,7 @@ class UserResource extends JsonResource
                     'status' => $vehicle->status,
                     'date_registered' => $vehicle->created_at,
                 ];
-            })),
+            }),
             'activities' => $this->whenLoaded('tripBooking', fn () => $this->tripBooking->map(function ($booking) {
                 $trip = $booking->trip;
 
@@ -71,8 +71,7 @@ class UserResource extends JsonResource
                         .' to '.($trip?->destinationCity?->state?->name ?? '-').' > '.($trip?->destinationCity?->name ?? '-'),
                     'date' => optional($booking->created_at)->format('M jS Y - h:iA'),
                 ];
-            })
-            ),
+            })),
             'manifests' => $this->when($this->relationLoaded('trip') && $this->getRelation('trip')->count() > 0, $this->trip?->map(function ($t) {
                 return [
                     'trip_uuid' => $t->uuid,
