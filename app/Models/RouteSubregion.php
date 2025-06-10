@@ -11,7 +11,8 @@ class RouteSubregion extends Model
 
     protected $connection = 'transport';
 
-    public function state(){
+    public function state()
+    {
         return $this->belongsTo(State::class);
     }
 }

@@ -12,44 +12,51 @@ class Trip extends Model
     protected $connection = 'transport';
 
     protected $fillable = [
-        "user_id",
-        "uuid",
-        "vehicle_id",
-        "transit_company_id",
-        "departure",
-        "destination",
-        "price",
-        "bus_type",
-        "bus_stops",
+        'user_id',
+        'uuid',
+        'vehicle_id',
+        'transit_company_id',
+        'departure',
+        'destination',
+        'price',
+        'bus_type',
+        'bus_stops',
     ];
 
-    public function casts(): array{
+    public function casts(): array
+    {
         return [
-            "bus_stops" => 'array',
+            'bus_stops' => 'array',
         ];
     }
 
-    public function transitCompany(){
+    public function transitCompany()
+    {
         return $this->belongsTo(TransitCompany::class, 'transit_company_id', 'id');
     }
 
-    public function departureCity(){
+    public function departureCity()
+    {
         return $this->hasOne(RouteSubregion::class, 'id', 'departure');
     }
 
-    public function destinationCity(){
+    public function destinationCity()
+    {
         return $this->hasOne(RouteSubregion::class, 'id', 'destination');
     }
 
-    public function manifest(){
+    public function manifest()
+    {
         return $this->hasOne(Manifest::class);
     }
 
-    public function bookings(){
+    public function bookings()
+    {
         return $this->hasMany(TripBooking::class);
     }
 
-    public function vehicle(){
+    public function vehicle()
+    {
         return $this->belongsTo(Vehicle::class);
     }
 }

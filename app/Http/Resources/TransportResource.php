@@ -14,7 +14,7 @@ class TransportResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $data = [
+        return [
             "id" => $this->id,
             "name" => $this->name,
             "short_name" => $this->short_name,
@@ -47,8 +47,6 @@ class TransportResource extends JsonResource
                         "date_registered" => $driver->driver?->created_at,
                     ];
                 })
-            ),
         ];
-        return $data;
     }
 }

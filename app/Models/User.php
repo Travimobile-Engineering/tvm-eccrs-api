@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -17,21 +19,20 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-
     protected $connection = 'transport';
 
     protected $fillable = [
-        "uuid",
-        "first_name",
-        "last_name",
+        'uuid',
+        'first_name',
+        'last_name',
         'password',
-        "phone_number",
+        'phone_number',
         'email',
-        "nin",
-        "next_of_kin_full_name",
-        "email_verified",
-        "verification_code",
-        "status",
+        'nin',
+        'next_of_kin_full_name',
+        'email_verified',
+        'verification_code',
+        'status',
     ];
 
     /**
@@ -57,27 +58,54 @@ class User extends Authenticatable
         ];
     }
 
-    public function tripBookings(){
+    public function tripBookings()
+    {
         return $this->hasMany(TripBooking::class, 'user_id', 'id');
     }
 
-    public function watchlists(){
+    public function watchlists()
+    {
         return $this->hasMany(WatchList::class, 'email', 'email');
     }
 
-    public function vehicle(){
+    public function vehicle()
+    {
         return $this->hasOne(Vehicle::class);
     }
 
-    public function documents(){
+    public function documents()
+    {
         return $this->hasMany(Document::class);
     }
 
-    public function union(){
+    public function union()
+    {
         return $this->hasOne(TransitCompanyUnion::class, 'id', 'transit_company_union_id');
     }
 
-    public function trips(){
+    public function trips()
+    {
         return $this->hasMany(Trip::class);
+    }
+
+    #[Scope]
+    protected function scopeAgentsBetween(Builder $query, $from, $to): void
+    {
+        $query->whereNotNull('agent_id')
+            ->whereBetween('created_at', [$from, $to]);
+    }
+
+    #[Scope]
+    protected function scopeDriversBetween(Builder $query, $from, $to): void
+    {
+        $query->whereHas('vehicle')
+            ->whereBetween('created_at', [$from, $to]);
+    }
+
+    #[Scope]
+    protected function scopeIsAgent(Builder $query): void
+    {
+        $query->whereNotNull('agent_id')
+            ->where('agent_id', '!=', '');
     }
 }

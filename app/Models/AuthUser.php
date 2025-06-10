@@ -1,0 +1,133 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\UserStatus;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+class AuthUser extends Authenticatable implements JWTSubject
+{
+    use Notifiable;
+
+    protected $connection = 'authuser';
+
+    protected $table = 'users';
+
+    protected $fillable = [
+        'uuid',
+        'first_name',
+        'last_name',
+        'sms_verified',
+        'user_category',
+        'wallet',
+        'txn_pin',
+        'address',
+        'gender',
+        'is_admin',
+        'nin',
+        'next_of_kin_full_name',
+        'next_of_kin_phone_number',
+        'next_of_kin_gender',
+        'next_of_kin_relationship',
+        'verification_code',
+        'verification_code_expires_at',
+        'email_verified_at',
+        'custom_fields',
+        'avatar_url',
+        'uuid',
+        'phone_number',
+        'email',
+        'email_verified',
+        'password',
+        'transit_company_union_id',
+        'profile_photo',
+        'public_id',
+        'driver_verified',
+        'agent_id',
+        'is_available',
+        'lng',
+        'lat',
+        'trip_extended_time',
+        'inbox_notifications',
+        'email_notifications',
+        'status',
+        'reason',
+        'security_question_id',
+        'security_answer',
+        'fcm_token',
+        'is_premium_driver',
+        'reset_code',
+        'reset_code_expires_at',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'verification_code',
+        'verification_code_expires_at',
+        'reset_code',
+        'reset_code_expires_at',
+        'email_verified_at',
+        'is_admin',
+        'created_at',
+        'updated_at',
+    ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(function ($user): void {
+            $user->uuid = Str::uuid();
+        });
+        // static::bootDeletesUserRelationships();
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'driver_verified' => 'boolean',
+            'is_available' => 'boolean',
+            'inbox_notifications' => 'boolean',
+            'email_notifications' => 'boolean',
+            'status' => UserStatus::class,
+            'is_premium_driver' => 'boolean',
+            'email_verified' => 'boolean',
+        ];
+    }
+
+    public function getJWTIdentifier(): mixed
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array
+    {
+        return [];
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->roles()->whereHas('permissions', fn ($q) => $q->where('name', $permission)
+        )->exists();
+    }
+}

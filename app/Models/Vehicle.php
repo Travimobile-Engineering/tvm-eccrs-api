@@ -12,33 +12,37 @@ class Vehicle extends Model
     protected $connection = 'transport';
 
     protected $fillable = [
-        "name",
-        "company_id",
-        "user_id",
-        "brand_id",
-        "plate_no",
-        "engine_no",
-        "chassis_no",
-        "color",
-        "model",
-        "seats",
+        'name',
+        'company_id',
+        'user_id',
+        'brand_id',
+        'plate_no',
+        'engine_no',
+        'chassis_no',
+        'color',
+        'model',
+        'seats',
     ];
 
-    public function casts() :array{
+    public function casts(): array
+    {
         return [
             'seats' => 'array',
         ];
     }
 
-    public function brand(){
+    public function brand()
+    {
         return $this->belongsTo(VehicleBrand::class, 'brand_id', 'id');
     }
 
-    public function driver(){
+    public function driver()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function company(){
+    public function company()
+    {
         return $this->belongsTo(TransitCompany::class, 'company_id');
     }
 }
