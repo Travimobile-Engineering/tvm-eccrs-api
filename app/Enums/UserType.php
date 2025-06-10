@@ -4,6 +4,9 @@ namespace App\Enums;
 
 enum UserType: string
 {
+    case DRIVER = 'driver';
+    case AGENT = 'agent';
+    case PASSENGER = 'passenger';
     case SECURITY = 'security';
     case SUPER_ADMIN = 'super_admin';
 
@@ -21,6 +24,9 @@ enum UserType: string
     public static function appUsers(): array
     {
         return [
+            self::DRIVER,
+            self::AGENT,
+            self::PASSENGER,
             self::SUPER_ADMIN,
         ];
     }

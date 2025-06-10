@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Enums\Zones;
 use App\Models\State;
 use App\Models\TransitCompany;
@@ -42,6 +43,7 @@ class UserService
     public function getDrivers()
     {
         $drivers = User::with(['documents', 'union'])
+            ->where('user_category', UserType::DRIVER->value)
             ->whereHas('vehicle')
             ->paginate(25);
 

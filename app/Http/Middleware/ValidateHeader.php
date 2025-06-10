@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +27,12 @@ class ValidateHeader
 
         if ($receivedValue !== $expectedValue) {
             return response()->json(['error' => 'Unauthorized access. Invalid header value.'], 401);
+        }
+
+        $user = $request->user();
+
+        if (! $user || $user->user_category !== UserType::SUPER_ADMIN->value) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
         }
 
         return $next($request);

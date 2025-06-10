@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Dtos\SendCodeData;
+use App\Enums\MailingEnum;
+use App\Mail\ForgotPasswordMail;
 use App\Models\AuthUser;
 use App\Traits\HttpResponse;
 use App\Traits\LoginTrait;
@@ -44,6 +47,81 @@ class AuthService
         }
     }
 
+    public function forgotPassword($request)
+    {
+        $user = AuthUser::where('email', $request->email)->first();
+
+        if (! $user) {
+            return $this->error(null, "We can\'t find a user with that email address", 404);
+        }
+
+        $code = getCode();
+
+        $user->update([
+            'reset_code' => $code,
+            'reset_code_expires_at' => now()->addMinutes(15),
+        ]);
+
+        $data = [
+            'name' => $user->first_name,
+            'code' => $code,
+        ];
+
+        sendCode(
+            $request,
+            new SendCodeData(
+                type: MailingEnum::RESET_CODE,
+                user: $user,
+                data: $data,
+                phone: formatPhoneNumber($user->phone_number),
+                message: "Your Travi Reset Pin is: $code. Valid for 10 mins. Do not share with anyone. Powered By Travi",
+                subject: 'Your Password Reset Code',
+                mailable: ForgotPasswordMail::class,
+            ),
+            'email'
+        );
+
+        return $this->success(null, 'Verification code sent successfully');
+    }
+
+    public function resetPassword($request)
+    {
+        $user = AuthUser::where('email', $request->email)
+            ->where('reset_code', $request->code)
+            ->where('reset_code_expires_at', '>=', now())
+            ->first();
+
+        if (! $user) {
+            return $this->error(null, 'Invalid or expired code.', 400);
+        }
+
+        $user->update([
+            'reset_code' => null,
+            'reset_code_expires_at' => null,
+            'password' => bcrypt($request->new_password),
+        ]);
+
+        return $this->success(null, 'Password reset successfully');
+    }
+
+    public function logout()
+    {
+        try {
+            $token = auth('api')->getToken();
+
+            if (! $token) {
+                return $this->error(null, 'Token missing', 401);
+            }
+
+            auth('api')->invalidate($token);
+
+            return $this->success(null, 'Logged out successfully');
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return $this->error(null, 'Failed to log out, token invalid or expired', 500);
+        }
+    }
+
+    // Authentication for Micro APIs
     public function authLogin($request)
     {
         $url = config('services.auth_service.url').'/auth/login';
@@ -56,7 +134,7 @@ class AuthService
         return $response->json();
     }
 
-    public function forgotPassword($request)
+    public function wipforgotPassword($request)
     {
         $url = config('services.auth_service.url').'/auth/forgot-password';
 
@@ -67,7 +145,7 @@ class AuthService
         return $response->json();
     }
 
-    public function resetPassword($request)
+    public function wipresetPassword($request)
     {
         $url = config('services.auth_service.url').'/auth/reset-password';
 

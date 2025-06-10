@@ -5,9 +5,11 @@ use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('eccrs')
+Route::middleware('validate.header')
+    ->prefix('eccrs')
     ->group(function () {
-        Route::get('/health-check', fn () => response()->json([], 200));
+        Route::get('/health-check', fn () => response()->json([], 200))
+            ->withoutMiddleware('validate.header');
 
         Route::prefix('auth')
             ->controller(AuthController::class)
@@ -17,7 +19,7 @@ Route::prefix('eccrs')
                 Route::post('/reset-password', 'resetPassword');
             });
 
-        Route::middleware(['auth:api', 'validate.header'])
+        Route::middleware(['auth:api'])
             ->group(function () {
                 Route::prefix('user')
                     ->controller(UserController::class)
@@ -40,5 +42,7 @@ Route::prefix('eccrs')
                         Route::get('/{id}/vehicle', 'getVehicle');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
                     });
+
+                Route::post('/auth/logout', [AuthController::class, 'logout']);
             });
     });
