@@ -29,7 +29,7 @@ class ValidateHeader
             return response()->json(['error' => 'Unauthorized access. Invalid header value.'], 401);
         }
 
-        $user = $request->user();
+        $user = auth()->guard('api')->user();
 
         dd($user);
 
