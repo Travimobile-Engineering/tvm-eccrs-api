@@ -2,11 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
+use App\Models\AuthUser;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ValidateHeader
+class ValidateAuthHeader
 {
     /**
      * Handle an incoming request.
@@ -26,6 +28,12 @@ class ValidateHeader
 
         if ($receivedValue !== $expectedValue) {
             return response()->json(['error' => 'Unauthorized access. Invalid header value.'], 401);
+        }
+
+        $user = AuthUser::where('email', $request->input('email'))->first();
+
+        if (! $user || $user->user_category != UserType::SUPER_ADMIN->value) {
+            return response()->json(['error' => 'Unauthorized access.'], 401);
         }
 
         return $next($request);

@@ -5,13 +5,12 @@ use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('validate.header')
-    ->prefix('eccrs')
+Route::prefix('eccrs')
     ->group(function () {
-        Route::get('/health-check', fn () => response()->json([], 200))
-            ->withoutMiddleware('validate.header');
+        Route::get('/health-check', fn () => response()->json([], 200));
 
-        Route::prefix('auth')
+        Route::middleware('validate.auth.header')
+            ->prefix('auth')
             ->controller(AuthController::class)
             ->group(function () {
                 Route::post('/login', 'userLogin');
@@ -19,7 +18,7 @@ Route::middleware('validate.header')
                 Route::post('/reset-password', 'resetPassword');
             });
 
-        Route::middleware(['auth:api'])
+        Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
                     ->controller(UserController::class)
