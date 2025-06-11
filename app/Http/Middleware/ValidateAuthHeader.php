@@ -32,7 +32,9 @@ class ValidateAuthHeader
 
         $user = AuthUser::where('email', $request->input('email'))->first();
 
-        if (! $user || $user->user_category != UserType::SUPER_ADMIN->value) {
+        dd($user);
+
+        if (! $user || $user->user_category !== UserType::SUPER_ADMIN->value) {
             return response()->json(['error' => 'Unauthorized access.'], 401);
         }
 
