@@ -31,7 +31,7 @@ class ValidateHeader
 
         $user = $request->user();
 
-        if (! $user || $user->user_category !== UserType::SUPER_ADMIN->value) {
+        if (! $user || $user->user_category != UserType::SUPER_ADMIN->value) {
             return response()->json(['error' => 'Unauthorized access.'], 401);
         }
 
