@@ -3,9 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Enums\UserType;
-use App\Models\AuthUser;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class ValidateAuthHeader
@@ -30,7 +30,7 @@ class ValidateAuthHeader
             return response()->json(['error' => 'Unauthorized access. Invalid header value.'], 401);
         }
 
-        $user = AuthUser::where('email', $request->input('email'))->first();
+        $user = DB::connection('authuser')->table('users')->where('email', $request->input('email'))->first();
 
         dd($user);
 
