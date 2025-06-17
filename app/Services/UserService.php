@@ -16,9 +16,24 @@ class UserService
 
     public function getTravellers()
     {
-        $travellers = User::whereHas('tripBookings')->paginate(25);
+        $travellers = User::whereHas('tripBookings');
+        if(request()->input()){
+            $inputs = request()->input();
+            if(array_key_exists('name', $inputs)){
+                $travellers->where('first_name', 'like', '%'.$inputs['name'].'%')
+                    ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
+            }
 
-        return $this->withPagination($travellers->toResourceCollection(), 'Travellers retrieved successfully');
+            if(array_key_exists('nin', $inputs)){
+                $travellers->where('nin', $inputs['nin']);
+            }
+
+            if(array_key_exists('id', $inputs)){
+                $travellers->where('id', $inputs['id']);
+            }
+        }
+
+        return $this->withPagination($travellers->paginate(25)->toResourceCollection(), 'Travellers retrieved successfully');
     }
 
     public function getUserDetail($id)
