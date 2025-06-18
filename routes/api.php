@@ -8,18 +8,18 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('validate.header')
     ->prefix('eccrs')
     ->group(function () {
-        Route::get('/health-check', fn () => response()->json([], 200))
-            ->withoutMiddleware('validate.header');
+        Route::get('/health-check', fn () => response()->json([], 200));
 
-        Route::prefix('auth')
+        Route::middleware('validate.auth.header')
+            ->prefix('auth')
             ->controller(AuthController::class)
             ->group(function () {
                 Route::post('/login', 'userLogin');
                 Route::post('/forgot-password', 'forgotPassword');
                 Route::post('/reset-password', 'resetPassword');
             });
-
-        Route::withoutMiddleware(['auth:api'])
+      
+        Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
                     ->controller(UserController::class)
