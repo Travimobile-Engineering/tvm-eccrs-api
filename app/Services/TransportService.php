@@ -37,19 +37,29 @@ class TransportService
     public function getDrivers($id)
     {
         $company = TransitCompany::with([
-            'drivers' => fn ($q) => $q->with(['union', 'documents']),
+            'drivers' => function ($q){
+                $q->with(['union', 'documents']);
+                if(request()->input('name')){
+                    $name = request()->input('name');
+                        $q->where('first_name', 'like', '%'.$name.'%')
+                        ->orWhere('last_name', 'like', '%'.$name.'%');
+                }
+            },
         ])->findOrFail($id);
 
-        return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
+        
+    return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
     }
 
     public function getVehicles()
     {
         $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
-            ->where('company_id', request()->id)
-            ->paginate(25);
+            ->where('company_id', request()->id);
+            if($plate_no = request()->input('plate-no')){
+                $vehicles->where('plate_no',  $plate_no);
+            }
 
-        return $this->withPagination($vehicles->toResourceCollection(), 'Vehicles retrieved successfully');
+        return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
     }
 
     public function getVehicle($id)

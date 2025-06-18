@@ -50,19 +50,43 @@ class UserService
 
     public function getAgents()
     {
-        $agents = User::isAgent()->paginate(25);
+        // $agents = User::isAgent()->paginate(25);
+        $agents = User::isAgent();
+        if(request()->input()){
+            $inputs = request()->input();
+            if(array_key_exists('name', $inputs)){
+                $agents->where('first_name', 'like', '%'.$inputs['name'] .'%')
+                ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
+            }
 
-        return $this->withPagination($agents->toResourceCollection(), 'Agents retrieved successfully');
+            if(array_key_exists('id', $inputs)){
+                $agents->where('id', 'like', '%'.$inputs['id'].'%');
+            }
+        }
+        return $this->withPagination($agents->paginate(25)->toResourceCollection(), 'Agents retrieved successfully');
     }
 
     public function getDrivers()
     {
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
-            ->whereHas('vehicle')
-            ->paginate(25);
+            ->whereHas('vehicle');
+            if(request()->input()){
+                $inputs = request()->input();
+                if(array_key_exists('name', $inputs)){
+                    $drivers->where('first_name', 'like', '%'.$inputs['name'].'%')->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
+                }
 
-        return $this->withPagination($drivers->toResourceCollection(), 'Drivers retrieved successfully');
+                if(array_key_exists('id', $inputs)){
+                    $drivers->where('id', 'like', '%'.$inputs['id'].'%');
+                }
+
+                if(array_key_exists('nin', $inputs)){
+                    $drivers->where('nin', 'like', '%'.$inputs['nin'].'%');
+                }
+            }
+            return $this->withPagination($drivers->paginate(25)->toResourceCollection(), 'Drivers retrieved successfully');
+           
     }
 
     public function stats()
