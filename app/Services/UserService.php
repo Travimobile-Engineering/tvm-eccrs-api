@@ -43,7 +43,7 @@ class UserService
         $user = User::with([
             'vehicle.brand',
             'watchlists',
-            'trips' => fn ($q) => $q->with(['manifest', 'booking', 'departureCity.state', 'destinationCity.state']),
+            'trips' => fn ($q) => $q->with(['manifest', 'departureCity.state', 'destinationCity.state']),
             'tripBookings.trip' => fn ($query) => $query->with(['transitCompany', 'departureCity.state', 'destinationCity.state']),
         ])->findOrFail($id);
 
