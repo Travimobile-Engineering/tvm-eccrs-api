@@ -18,11 +18,12 @@ class UserService
     public function getTravellers()
     {
         $travellers = User::whereHas('tripBookings');
-        if(request()->input()){
-            $inputs = request()->input();
+        if($inputs = request()->input()){
             if(array_key_exists('name', $inputs)){
-                $travellers->where('first_name', 'like', '%'.$inputs['name'].'%')
-                    ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
+                $travellers->where(function($q) use($inputs){
+                    return $q->where('first_name', 'like', '%'.$inputs['name'].'%')
+                        ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
+                });
             }
 
             if(array_key_exists('nin', $inputs)){
@@ -207,7 +208,7 @@ class UserService
             $city_ids = $state->cities->map(fn($city) => $city->id);
             $cities = RouteSubregion::with('departingTripBookings', 'arrivingTripBookings')->whereIn('id', $city_ids)->get();
             $data = collect();
-            $cities->map(function($city) use($data){
+            $cities->each(function($city) use($data){
                 $data[$city->name] = $city->departingTripBookings->count() + $city->arrivingTripBookings->count();
             });
             return $data;

@@ -15,14 +15,8 @@ class TransportService
 
     public function getCompanies()
     {
-        $companies = TransitCompany::with(['union', 'unionState', 'vehicles']);
-
-            if(request()->input('name')){
-                $name = request()->input('name');
-                $companies->where('name', 'like', '%'.$name.'%');
-            }
-    
-
+        $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
+        ->when(request('name'), fn($q, $name) => $q->where('name', 'like', "%$name%"));
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
 

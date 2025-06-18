@@ -5,10 +5,8 @@ use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::
-// middleware('validate.header')
-    // ->
-    prefix('eccrs')
+Route::middleware('validate.header')
+    ->prefix('eccrs')
     ->group(function () {
         Route::get('/health-check', fn () => response()->json([], 200))
             ->withoutMiddleware('validate.header');
