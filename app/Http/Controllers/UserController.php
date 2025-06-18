@@ -35,6 +35,11 @@ class UserController extends Controller
         return $this->service->stats();
     }
 
+    public function statActivities()
+    {
+        return $this->service->statActivities();
+    }
+
     public function getStateActivities()
     {
         return $this->service->getStateActivities();

@@ -31,6 +31,7 @@ Route::
                         Route::get('/agents', 'getAgents');
                         Route::get('/drivers', 'getDrivers');
                         Route::get('/stats', 'stats');
+                        Route::get('/stats/activities', 'statActivities');
                         Route::get('/activities', 'getStateActivities');
                     });
 
