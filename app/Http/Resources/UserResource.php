@@ -60,7 +60,7 @@ class UserResource extends JsonResource
                     'date_registered' => $vehicle->created_at,
                 ];
             })),
-            'activities' => $this->whenLoaded('tripBooking', fn () => $this->tripBooking->map(function ($booking) {
+            'activities' => $this->whenLoaded('tripBookings', fn () => $this->tripBookings->map(function ($booking) {
                 $trip = $booking->trip;
 
                 return [
