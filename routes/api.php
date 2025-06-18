@@ -5,7 +5,8 @@ use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('eccrs')
+Route::middleware('validate.header')
+    ->prefix('eccrs')
     ->group(function () {
         Route::get('/health-check', fn () => response()->json([], 200));
 
@@ -17,7 +18,7 @@ Route::prefix('eccrs')
                 Route::post('/forgot-password', 'forgotPassword');
                 Route::post('/reset-password', 'resetPassword');
             });
-
+      
         Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
@@ -28,6 +29,7 @@ Route::prefix('eccrs')
                         Route::get('/agents', 'getAgents');
                         Route::get('/drivers', 'getDrivers');
                         Route::get('/stats', 'stats');
+                        Route::get('/stats/activities', 'statActivities');
                         Route::get('/activities', 'getStateActivities');
                     });
 
@@ -37,8 +39,8 @@ Route::prefix('eccrs')
                         Route::get('/companies', 'getCompanies');
                         Route::get('/{id}/detail', 'getCompanyDetails');
                         Route::get('/{id}/drivers', 'getDrivers');
+                        Route::get('/vehicle/{id}/detail', 'getVehicle');
                         Route::get('/{id}/vehicles', 'getVehicles');
-                        Route::get('/{id}/vehicle', 'getVehicle');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
                     });
 
