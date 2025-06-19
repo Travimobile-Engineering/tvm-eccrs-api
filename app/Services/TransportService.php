@@ -62,6 +62,7 @@ class TransportService
     {
         $trips = Trip::with([
             'transitCompany',
+            'mainifest',
             'departureCity' => function($q){
                 $q->with('state')
                     ->when(request('departure'), function($q, $departure){
