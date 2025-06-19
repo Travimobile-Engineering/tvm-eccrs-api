@@ -31,7 +31,10 @@ class TransportService
     public function getDrivers($id)
     {
         $company = TransitCompany::with([
-            'drivers' => fn ($q) => $q->with(['union', 'documents']),
+            'drivers' => function ($q) {
+                return $q->with(['union', 'documents'])
+                    ->when(request('name'), fn($q, $name) => $q->searchByName($name));
+            },
         ])->findOrFail($id);
 
         return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
@@ -41,6 +44,7 @@ class TransportService
     {
         $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
             ->where('company_id', request()->id)
+            ->when(request('plate_no'), fn($q, $plate_no) => $q->where('plate_no', $plate_no))
             ->paginate(25);
 
         return $this->withPagination($vehicles->toResourceCollection(), 'Vehicles retrieved successfully');
@@ -57,12 +61,24 @@ class TransportService
     {
         $trips = Trip::with([
             'transitCompany',
-            'departureCity.state',
-            'destinationCity.state', 'vehicle' => fn ($q) => $q->with('driver', 'brand'),
+            'departureCity' => function($q){
+                $q->with('state')
+                    ->when(request('departure'), function($q, $departure){
+                        $q->where('name', 'like', "%$departure%");
+                    });
+            },
+            'destinationCity' => function($q){
+                $q->with('state')
+                    ->when(request('destination'), function($q, $destination){
+                        $q->where('name', 'like', "%$destination%");
+                    });
+            }, 
+            'vehicle' => fn ($q) => $q->with('driver', 'brand'),
         ])
-            ->where('transit_company_id', $id)
-            ->when($status, fn ($query) => $query->where('status', $status))
-            ->paginate(25);
+        ->where('transit_company_id', $id)
+        ->when($status, fn ($query) => $query->where('status', $status))
+        
+        ->paginate(25);
 
         return $this->withPagination($trips->toResourceCollection(), 'Trips retrieved successfully');
     }

@@ -20,10 +20,7 @@ class UserService
         $travellers = User::whereHas('tripBookings');
         if($inputs = request()->input()){
             if(array_key_exists('name', $inputs)){
-                $travellers->where(function($q) use($inputs){
-                    return $q->where('first_name', 'like', '%'.$inputs['name'].'%')
-                        ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
-                });
+                $travellers->searchByName($inputs['name']);
             }
 
             if(array_key_exists('nin', $inputs)){
@@ -52,7 +49,10 @@ class UserService
 
     public function getAgents()
     {
-        $agents = User::isAgent()->paginate(25);
+        $agents = User::isAgent()
+            ->when(request('name'), fn($q, $name) => $q->searchByName($name))
+            ->when(request('id'), fn($q, $id) => $q->where('agent_id', $id))
+            ->paginate(25);
 
         return $this->withPagination($agents->toResourceCollection(), 'Agents retrieved successfully');
     }
@@ -61,6 +61,8 @@ class UserService
     {
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
+            ->when(request('name'), fn($q, $name) => $q->searchByName($name))
+            ->when(request('nin'), fn($q, $nin) => $q->where('nin', $nin))
             ->whereHas('vehicle')
             ->paginate(25);
 
