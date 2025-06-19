@@ -19,7 +19,7 @@ Route::middleware('validate.header')
                 Route::post('/forgot-password', 'forgotPassword');
                 Route::post('/reset-password', 'resetPassword');
             });
-      
+
         Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
@@ -44,10 +44,10 @@ Route::middleware('validate.header')
                         Route::get('/{id}/vehicles', 'getVehicles');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
                     });
-                
+
                 Route::prefix('manifest')
                     ->controller(ManifestController::class)
-                    ->group(function(){
+                    ->group(function () {
                         Route::get('/{id}/detail', 'getManifestDetail');
                     });
 

@@ -44,7 +44,9 @@ class TransitCompany extends Model
     {
         return $this->hasManyThrough(TripBooking::class, Trip::class, 'transit_company_id', 'trip_id');
     }
-    public function activeTrips(){
+
+    public function activeTrips()
+    {
         return $this->hasMany(Trip::class)->where('status', 'active');
     }
 
