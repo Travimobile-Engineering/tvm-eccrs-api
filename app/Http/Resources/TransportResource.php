@@ -35,6 +35,7 @@ class TransportResource extends JsonResource
             'status' => ['unverified', 'verified'][$this->ev],
             'vehicles' => $this->vehicles->count(),
             'drivers' => $this->whenLoaded('drivers', fn () => $this->getRelation('drivers')->count()),
+            'active_trips' => $this->activeTrips->count(),
             'bookings' => $this->whenLoaded('bookings', fn () => $this->bookings->count()),
             'staffs' => $this->whenLoaded('drivers', $this->drivers->map(function ($driver) {
                 return [
