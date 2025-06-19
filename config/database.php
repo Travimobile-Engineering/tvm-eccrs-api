@@ -68,7 +68,7 @@ return [
             'host' => env('TRANSPORT_DB_HOST', '127.0.0.1'),
             'port' => env('TRANSPORT_DB_PORT', '3306'),
             'database' => env('TRANSPORT_DB_DATABASE', 'laravel'),
-            'username' => env('TRANSPORT_DB_USERNAME', 'root'),
+            'username' => env('TRANSPORT_DB_USERNAME', 'roots'),
             'password' => env('TRANSPORT_DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),

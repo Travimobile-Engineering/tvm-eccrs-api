@@ -37,7 +37,8 @@ class TransportService
             },
         ])->findOrFail($id);
 
-        return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
+        
+    return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
     }
 
     public function getVehicles()
@@ -47,7 +48,7 @@ class TransportService
             ->when(request('plate_no'), fn($q, $plate_no) => $q->where('plate_no', $plate_no))
             ->paginate(25);
 
-        return $this->withPagination($vehicles->toResourceCollection(), 'Vehicles retrieved successfully');
+        return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
     }
 
     public function getVehicle($id)
