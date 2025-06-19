@@ -22,7 +22,7 @@ class TransportService
 
     public function getCompanyDetails($id)
     {
-        $company = TransitCompany::with(['bookings', 'drivers'])
+        $company = TransitCompany::with(['bookings', 'drivers', 'activeTrips'])
             ->findOrFail($id);
 
         return $this->success(new TransportResource($company), 'Company retrieved successfully');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,12 @@ Route::middleware('validate.header')
                         Route::get('/vehicle/{id}/detail', 'getVehicle');
                         Route::get('/{id}/vehicles', 'getVehicles');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
+                    });
+                
+                Route::prefix('manifest')
+                    ->controller(ManifestController::class)
+                    ->group(function(){
+                        Route::get('/{id}/detail', 'getManifestDetail');
                     });
 
                 Route::post('/auth/logout', [AuthController::class, 'logout']);
