@@ -18,7 +18,6 @@ class ManifestService
                     'bookings.user',
                 ])
             ])->findOrFail($id);
-        // dd($manifest);
         return $this->success($manifest->toResource(), "Manifest retrieved successfully");
     }
 }
