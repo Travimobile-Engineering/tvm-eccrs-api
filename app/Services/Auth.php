@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+
 use Illuminate\Support\Facades\Http;
 
 class Auth
@@ -17,12 +18,12 @@ class Auth
         }
 
         return match (strtolower($method)) {
-            'get'    => $client->get($endpoint, $data),
-            'post'   => $client->post($endpoint, $data),
-            'put'    => $client->put($endpoint, $data),
-            'patch'  => $client->patch($endpoint, $data),
+            'get' => $client->get($endpoint, $data),
+            'post' => $client->post($endpoint, $data),
+            'put' => $client->put($endpoint, $data),
+            'patch' => $client->patch($endpoint, $data),
             'delete' => $client->delete($endpoint, $data),
-            default  => throw new \InvalidArgumentException("Unsupported method [$method]"),
+            default => throw new \InvalidArgumentException("Unsupported method [$method]"),
         };
     }
 }
