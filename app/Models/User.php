@@ -108,4 +108,8 @@ class User extends Authenticatable
         $query->whereNotNull('agent_id')
             ->where('agent_id', '!=', '');
     }
+
+    protected function scopeSearchByName(Builder $query, $name){
+        $query->where(fn($q) => $q->where('first_name', 'like', "%$name%")->orWhere('last_name', 'like', "%$name%"));
+    }
 }
