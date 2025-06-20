@@ -35,7 +35,24 @@ class VehicleResource extends JsonResource
             'description' => $this->description,
             'status' => ['unverified', 'verified'][$this->status],
             'date_created' => $this->created_at,
-            'documents' => $this->driver->documents->map(function ($document) {
+            'driver' => [
+                'first_name' => $this->driver->first_name,
+                'last_name' => $this->driver->last_name,
+                'phone_number' => $this->driver->phone_number,
+                'email' => $this->driver->email,
+                'user_category' => $this->driver->user_category,
+                'address' => $this->driver->address,
+                'gender' => $this->driver->gender,
+                'nin' => $this->driver->nin,
+                'profile_photo_url' => $this->driver->profile_photo_url,
+                'next_of_kin_full_name' => $this->driver->next_of_kin_full_name,
+                'next_of_kin_phone_number' => $this->driver->next_of_kin_phone_number,
+                'next_of_kin_gender' => $this->driver->next_of_kin_gender,
+                'next_of_kin_relationship' => $this->driver->next_of_kin_relationship,
+                'status' => $this->driver->status,
+                'date_registered' => $this->driver->created_at,
+            ],
+            'documents' => $this->driver->documents?->map(function ($document) {
                 return [
                     'type' => $document->type,
                     'image_url' => $document->image_url,
