@@ -42,7 +42,7 @@ class TripResource extends JsonResource
                 'profile_photo' => $this->vehicle?->driver?->profile_photo,
 
             ],
-            'manifest_id' => $this->manifest?->id
+            'manifest_id' => $this->manifest?->id,
         ];
     }
 }

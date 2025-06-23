@@ -58,14 +58,12 @@ class UserResource extends JsonResource
                 ];
             })),
             'activities' => $this->whenLoaded('tripBookings', fn () => $this->tripBookings->map(function ($booking) {
-                $trip = $booking->trip;
-
                 return [
-                    'title' => ucwords(($trip?->means ?? 'Unknown').' Trip'),
-                    'desc' => 'Booked a '.($trip?->means ?? 'Unknown')
-                        .' trip: '.($trip?->transitCompany?->name ?? 'Unknown Company')
-                        .' - '.($trip?->departureCity?->state?->name ?? '-').' > '.($trip?->departureCity?->name ?? '-')
-                        .' to '.($trip?->destinationCity?->state?->name ?? '-').' > '.($trip?->destinationCity?->name ?? '-'),
+                    'title' => ucwords(($booking->trip?->means ?? 'Unknown').' Trip'),
+                    'desc' => 'Booked a '.($booking->trip?->means ?? 'Unknown')
+                        .' trip: '.($booking->trip?->transitCompany?->name ?? 'Unknown Company')
+                        .' - '.($booking->trip?->departureCity?->state?->name ?? '-').' > '.($booking->trip?->departureCity?->name ?? '-')
+                        .' to '.($booking->trip?->destinationCity?->state?->name ?? '-').' > '.($booking->trip?->destinationCity?->name ?? '-'),
                     'date' => optional($booking->created_at)->format('M jS Y - h:iA'),
                 ];
             })),
