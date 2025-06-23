@@ -17,23 +17,8 @@ class UserService
 
     public function getTravellers()
     {
-        $travellers = User::whereHas('tripBookings');
-        if($inputs = request()->input()){
-            if(array_key_exists('name', $inputs)){
-                $travellers->where(function($q) use($inputs){
-                    return $q->where('first_name', 'like', '%'.$inputs['name'].'%')
-                        ->orWhere('last_name', 'like', '%'.$inputs['name'].'%');
-                });
-            }
-
-            if(array_key_exists('nin', $inputs)){
-                $travellers->where('nin', $inputs['nin']);
-            }
-
-            if(array_key_exists('id', $inputs)){
-                $travellers->where('id', $inputs['id']);
-            }
-        }
+        $travellers = User::whereHas('tripBookings')
+        ->when(request('search'), fn($q, $search) => $q->search($search));
 
         return $this->withPagination($travellers->paginate(25)->toResourceCollection(), 'Travellers retrieved successfully');
     }
@@ -43,7 +28,7 @@ class UserService
         $user = User::with([
             'vehicle.brand',
             'watchlists',
-            'trips' => fn ($q) => $q->with(['manifest', 'departureCity.state', 'destinationCity.state']),
+            'trips' => fn ($q) => $q->with(['manifest', 'bookings', 'departureCity.state', 'destinationCity.state']),
             'tripBookings.trip' => fn ($query) => $query->with(['transitCompany', 'departureCity.state', 'destinationCity.state']),
         ])->findOrFail($id);
 
@@ -52,19 +37,21 @@ class UserService
 
     public function getAgents()
     {
-        $agents = User::isAgent()->paginate(25);
-
-        return $this->withPagination($agents->toResourceCollection(), 'Agents retrieved successfully');
+        $agents = User::isAgent()
+            ->when(request('search'), fn($q, $search) => $q->search($search)->orWhere('agent_id', $search))
+            ->paginate(25);
+        return $this->withPagination($agents->paginate(25)->toResourceCollection(), 'Agents retrieved successfully');
     }
 
     public function getDrivers()
     {
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
+            ->when(request('search'), fn($q, $search) => $q->search($search))
             ->whereHas('vehicle')
             ->paginate(25);
-
-        return $this->withPagination($drivers->toResourceCollection(), 'Drivers retrieved successfully');
+        return $this->withPagination($drivers->paginate(25)->toResourceCollection(), 'Drivers retrieved successfully');
+           
     }
 
     public function stats()
@@ -119,37 +106,39 @@ class UserService
                 'train' => $distribution['rail'] ?? 0,
                 'air' => $distribution['air'] ?? 0,
                 'sea' => $distribution['sea'] ?? 0,
-            ]
+            ],
         ], 'Stats retrieved successfully');
     }
 
-    public function statActivities() {
+    public function statActivities()
+    {
 
-        if(request()->input('zone')){
+        if (request()->input('zone')) {
             $states = collect(Zones::tryFrom(request()->input('zone'))?->states());
             $activities = collect();
-            $states->map(function($state) use($activities){
+            $states->map(function ($state) use ($activities) {
                 $activities[$state] = $this->getStateActivityCount($state);
             });
-            return $this->success($activities->toArray(), "Activities retrieved successfully");
+
+            return $this->success($activities->toArray(), 'Activities retrieved successfully');
         }
 
-        if(request()->input('state')){
-            return $this->success($this->getStateActivityCount(request()->input('state'), true)->toArray(), "Activities retrieved successfully");
+        if (request()->input('state')) {
+            return $this->success($this->getStateActivityCount(request()->input('state'), true)->toArray(), 'Activities retrieved successfully');
         }
 
-        if(request()->input('user')){
-            return $this->success($this->getStateActivities(request()->input('user')), "Activities retrieved successfully");
+        if (request()->input('user')) {
+            return $this->success($this->getStateActivities(request()->input('user')), 'Activities retrieved successfully');
         }
 
         return $this->success([
-                'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL->states()),
-                'north_east' => $this->getZoneActivities(Zones::NORTHEAST->states()),
-                'north_west' => $this->getZoneActivities(Zones::NORTHWEST->states()),
-                'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH->states()),
-                'south_east' => $this->getZoneActivities(Zones::SOUTHEAST->states()),
-                'south_west' => $this->getZoneActivities(Zones::SOUTHWEST->states()),
-        ], "Activities retrieved successfully");
+            'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL->states()),
+            'north_east' => $this->getZoneActivities(Zones::NORTHEAST->states()),
+            'north_west' => $this->getZoneActivities(Zones::NORTHWEST->states()),
+            'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH->states()),
+            'south_east' => $this->getZoneActivities(Zones::SOUTHEAST->states()),
+            'south_west' => $this->getZoneActivities(Zones::SOUTHWEST->states()),
+        ], 'Activities retrieved successfully');
     }
 
     public function getStateActivities($category = null)
@@ -162,7 +151,7 @@ class UserService
             'transitCompanies.drivers',
         ])->get();
 
-        $activities = $states->map(function ($state) use($category, $categories) {
+        $activities = $states->map(function ($state) use ($category, $categories) {
             $departingBookings = $state->departingTrips->flatMap(fn ($trip) => $trip->bookings);
             $arrivingBookings = $state->arrivingTrips->flatMap(fn ($trip) => $trip->bookings);
             $drivers = $state->transitCompanies->flatMap(fn ($company) => $company->drivers);
@@ -170,20 +159,20 @@ class UserService
             $data = [
                 'travellers' => $departingBookings->count() + $arrivingBookings->count(),
                 'transport_companies' => $state->transitCompanies->count(),
-                'drivers' => $drivers->count()
+                'drivers' => $drivers->count(),
             ];
 
-            if($category && in_array($category, $categories)){
+            if ($category && in_array($category, $categories)) {
 
                 return [
                     $state->name => $data[$category],
                 ];
             }
-            
+
             return [
                 $state->name => $data,
             ];
-            
+
         });
 
         return $this->success($activities, 'Activities retrieved successfully');
@@ -202,19 +191,20 @@ class UserService
     private function getStateActivityCount(string $state, $showCities = false): mixed
     {
         $state = State::with('cities')->where('name', $state)->first();
-        
-        if($showCities){
-            
-            $city_ids = $state->cities->map(fn($city) => $city->id);
+
+        if ($showCities) {
+
+            $city_ids = $state->cities->map(fn ($city) => $city->id);
             $cities = RouteSubregion::with('departingTripBookings', 'arrivingTripBookings')->whereIn('id', $city_ids)->get();
             $data = collect();
-            $cities->each(function($city) use($data){
+            $cities->each(function ($city) use ($data) {
                 $data[$city->name] = $city->departingTripBookings->count() + $city->arrivingTripBookings->count();
             });
+
             return $data;
-        }
-        else{
-            $cities = $state->cities->map(fn($city) => $city->id);
+        } else {
+            $cities = $state->cities->map(fn ($city) => $city->id);
+
             return TripBooking::whereHas('trip', function ($query) use ($cities) {
                 $query->whereIn('departure', $cities)
                     ->orWhereIn('destination', $cities);

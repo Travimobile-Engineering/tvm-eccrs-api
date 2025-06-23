@@ -16,13 +16,13 @@ class TransportService
     public function getCompanies()
     {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
-        ->when(request('name'), fn($q, $name) => $q->where('name', 'like', "%$name%"));
+        ->when(request('search'), fn($q, $search) => $q->where('name', 'like', "%$search%"));
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
 
     public function getCompanyDetails($id)
     {
-        $company = TransitCompany::with(['bookings', 'drivers'])
+        $company = TransitCompany::with(['bookings', 'drivers', 'activeTrips'])
             ->findOrFail($id);
 
         return $this->success(new TransportResource($company), 'Company retrieved successfully');
@@ -31,19 +31,24 @@ class TransportService
     public function getDrivers($id)
     {
         $company = TransitCompany::with([
-            'drivers' => fn ($q) => $q->with(['union', 'documents']),
+            'drivers' => function ($q) {
+                return $q->with(['union', 'documents'])
+                    ->when(request('search'), fn($q, $search) => $q->search($search));
+            },
         ])->findOrFail($id);
 
-        return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
+        
+    return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
     }
 
     public function getVehicles()
     {
         $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
             ->where('company_id', request()->id)
+            ->when(request('search'), fn($q, $search) => $q->where('plate_no', $search))
             ->paginate(25);
 
-        return $this->withPagination($vehicles->toResourceCollection(), 'Vehicles retrieved successfully');
+        return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
     }
 
     public function getVehicle($id)
@@ -57,12 +62,25 @@ class TransportService
     {
         $trips = Trip::with([
             'transitCompany',
-            'departureCity.state',
-            'destinationCity.state', 'vehicle' => fn ($q) => $q->with('driver', 'brand'),
+            'mainifest',
+            'departureCity' => function($q){
+                $q->with('state')
+                ->when(request('search'), function($q, $search){
+                    $q->where('name', 'like', "%$search%");
+                });
+            },
+            'destinationCity' => function($q){
+                $q->with('state')
+                ->when(request('search'), function($q, $search){
+                    $q->where('name', 'like', "%$search%");
+                });
+            }, 
+            'vehicle' => fn ($q) => $q->with('driver', 'brand'),
         ])
-            ->where('transit_company_id', $id)
-            ->when($status, fn ($query) => $query->where('status', $status))
-            ->paginate(25);
+        ->where('transit_company_id', $id)
+        ->when($status, fn ($query) => $query->where('status', $status))
+        
+        ->paginate(25);
 
         return $this->withPagination($trips->toResourceCollection(), 'Trips retrieved successfully');
     }

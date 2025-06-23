@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Manifest extends Model
 {
+    protected $connection = 'transport';
+
     public function trip()
     {
-        return $this->hasOne(Trip::class, 'id', 'trip_id');
+        return $this->belongsTo(Trip::class);
     }
 }

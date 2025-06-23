@@ -108,4 +108,13 @@ class User extends Authenticatable
         $query->whereNotNull('agent_id')
             ->where('agent_id', '!=', '');
     }
+
+    protected function scopeSearch(Builder $query, string $keyword){
+        $query->where(fn($q) => $q
+            ->where('first_name', 'like', "%$keyword%")
+            ->orWhere('last_name', 'like', "%$keyword%")
+            ->orWhere('nin', $keyword)
+            ->orWhere('id', $keyword)
+        );
+    }
 }
