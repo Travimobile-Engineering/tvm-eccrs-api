@@ -34,10 +34,7 @@ class UserResource extends JsonResource
             'email_verified' => $this->email_verified,
             'sms_verified' => $this->sms_verified,
             'status' => $this->status,
-            'reason' => $this->reason,
             'date_registered' => $this->created_at,
-            'avatar_url' => $this->avatar_url,
-            'profile_photo' => $this->profile_photo,
             'driver_verified' => $this->whenLoaded('union', fn () => (bool) $this->driver_verified),
             'union' => $this->whenLoaded('union', fn () => $this->union?->name),
             'documents' => $this->whenLoaded('document', fn () => $this->document?->map(function ($doc) {

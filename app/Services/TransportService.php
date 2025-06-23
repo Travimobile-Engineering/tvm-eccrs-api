@@ -16,8 +16,7 @@ class TransportService
     public function getCompanies()
     {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
-            ->when(request('name'), fn ($q, $name) => $q->where('name', 'like', "%$name%"));
-
+        ->when(request('search'), fn($q, $search) => $q->where('name', 'like', "%$search%"));
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
 
@@ -34,7 +33,7 @@ class TransportService
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
-                    ->when(request('name'), fn($q, $name) => $q->searchByName($name));
+                    ->when(request('search'), fn($q, $search) => $q->searchByName($search));
             },
         ])->findOrFail($id);
 
@@ -66,14 +65,14 @@ class TransportService
             'mainifest',
             'departureCity' => function($q){
                 $q->with('state')
-                    ->when(request('departure'), function($q, $departure){
-                        $q->where('name', 'like', "%$departure%");
+                    ->when(request('search'), function($q, $search){
+                        $q->where('name', 'like', "%$search%");
                     });
             },
             'destinationCity' => function($q){
                 $q->with('state')
-                    ->when(request('destination'), function($q, $destination){
-                        $q->where('name', 'like', "%$destination%");
+                    ->when(request('search'), function($q, $search){
+                        $q->where('name', 'like', "%$search%");
                     });
             }, 
             'vehicle' => fn ($q) => $q->with('driver', 'brand'),
