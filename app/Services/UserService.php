@@ -18,7 +18,7 @@ class UserService
     public function getTravellers()
     {
         $travellers = User::whereHas('tripBookings')
-        ->when(request('search'), fn($q, $search) => $q->search($search));
+            ->when(request('search'), fn ($q, $search) => $q->search($search));
 
         return $this->withPagination($travellers->paginate(25)->toResourceCollection(), 'Travellers retrieved successfully');
     }
@@ -38,8 +38,9 @@ class UserService
     public function getAgents()
     {
         $agents = User::isAgent()
-            ->when(request('search'), fn($q, $search) => $q->search($search)->orWhere('agent_id', $search))
+            ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->paginate(25);
+
         return $this->withPagination($agents->paginate(25)->toResourceCollection(), 'Agents retrieved successfully');
     }
 
@@ -47,11 +48,12 @@ class UserService
     {
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
-            ->when(request('search'), fn($q, $search) => $q->search($search))
+            ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->whereHas('vehicle')
             ->paginate(25);
+
         return $this->withPagination($drivers->paginate(25)->toResourceCollection(), 'Drivers retrieved successfully');
-           
+
     }
 
     public function stats()
@@ -113,7 +115,7 @@ class UserService
     public function statActivities()
     {
 
-        if (request()->input('zone')) {
+        if (request()->filled('zone')) {
             $states = collect(Zones::tryFrom(request()->input('zone'))?->states());
             $activities = collect();
             $states->map(function ($state) use ($activities) {
@@ -123,11 +125,11 @@ class UserService
             return $this->success($activities->toArray(), 'Activities retrieved successfully');
         }
 
-        if (request()->input('state')) {
+        if (request()->filled('state')) {
             return $this->success($this->getStateActivityCount(request()->input('state'), true)->toArray(), 'Activities retrieved successfully');
         }
 
-        if (request()->input('user')) {
+        if (request()->filled('user')) {
             return $this->success($this->getStateActivities(request()->input('user')), 'Activities retrieved successfully');
         }
 

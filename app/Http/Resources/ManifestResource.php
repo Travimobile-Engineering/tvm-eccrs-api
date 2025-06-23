@@ -49,7 +49,7 @@ class ManifestResource extends JsonResource
                 });
             }
         });
-        
+
         return [
             'driver' => [
                 'first_name' => $this->trip->vehicle->driver->first_name,
