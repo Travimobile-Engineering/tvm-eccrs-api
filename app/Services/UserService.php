@@ -18,7 +18,7 @@ class UserService
     public function getTravellers()
     {
         $travellers = User::whereHas('tripBookings')
-        ->when(request('search'), fn($q, $search) => $q->search(request($search)));
+        ->when(request('search'), fn($q, $search) => $q->search($search));
 
         return $this->withPagination($travellers->paginate(25)->toResourceCollection(), 'Travellers retrieved successfully');
     }
