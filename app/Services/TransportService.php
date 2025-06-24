@@ -62,7 +62,7 @@ class TransportService
     {
         $trips = Trip::with([
             'transitCompany',
-            'mainifest',
+            'manifest',
             'departureCity' => function ($q) {
                 $q->with('state')
                     ->when(request('search'), function ($q, $search) {
