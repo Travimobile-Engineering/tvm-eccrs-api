@@ -36,15 +36,15 @@ class ManifestResource extends JsonResource
             if ($booking->travelling_with) {
                 collect(json_decode($booking->travelling_with))->each(function ($t) use ($passengers) {
                     $passengers->push([
-                        'first_name' => explode(' ', $t->name)[0],
+                        'first_name' => explode(' ', $t->name)[0] ?? '',
                         'last_name' => explode(' ', $t->name)[1] ?? '',
-                        'email' => $t->email,
-                        'phone_number' => $t->phone_number,
-                        'gender' => $t->gender,
-                        'nin' => $t->nin,
-                        'next_of_kin_full_name' => $t->next_of_kin_full_name,
-                        'next_of_kin_relationship' => $t->next_of_kin_relationship,
-                        'next_of_kin_phone_number' => $t->next_of_kin_phone_number,
+                        'email' => $t->email ?? '',
+                        'phone_number' => $t->phone_number ?? '',
+                        'gender' => $t->gender ?? '',
+                        'nin' => $t->nin ?? '',
+                        'next_of_kin_full_name' => $t->next_of_kin_full_name ?? '',
+                        'next_of_kin_relationship' => $t->next_of_kin_relationship ?? '',
+                        'next_of_kin_phone_number' => $t->next_of_kin_phone_number ?? '',
                     ]);
                 });
             }
