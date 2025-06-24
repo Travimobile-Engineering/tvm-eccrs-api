@@ -47,4 +47,8 @@ return [
         'eccrs',
     ],
 
+    'sms' => [
+        'default' => env('SMS_PROVIDER', 'termii'),
+    ],
+
 ];

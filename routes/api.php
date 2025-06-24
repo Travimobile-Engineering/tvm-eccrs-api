@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ManifestController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,7 @@ Route::middleware('validate.header')
 
         Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
+                // User
                 Route::prefix('user')
                     ->controller(UserController::class)
                     ->group(function () {
@@ -34,6 +36,7 @@ Route::middleware('validate.header')
                         Route::get('/activities', 'getStateActivities');
                     });
 
+                // Transport
                 Route::prefix('transport')
                     ->controller(TransportController::class)
                     ->group(function () {
@@ -45,12 +48,50 @@ Route::middleware('validate.header')
                         Route::get('/{id}/trips/{status?}', 'getTrips');
                     });
 
+                // Manifest
                 Route::prefix('manifest')
                     ->controller(ManifestController::class)
                     ->group(function () {
                         Route::get('/{id}/detail', 'getManifestDetail');
                     });
 
+                // Settings
+                Route::prefix('settings')
+                    ->controller(SettingsController::class)
+                    ->group(function () {
+                        // Organization
+                        Route::prefix('organization')
+                            ->group(function () {
+                                Route::post('/create', 'createOrganization');
+                                Route::get('/', 'getOrganizations');
+                                Route::get('/{id}', 'getOrganization');
+                                Route::put('/{id}/update', 'updateOrganization');
+                                Route::delete('/{id}/delete', 'deleteOrganization');
+                            });
+
+                        // Roles
+                        Route::prefix('role')
+                            ->group(function () {
+                                Route::post('/create', 'createRole');
+                                Route::get('/', 'getRoles');
+                                Route::get('/{id}', 'getRole');
+                                Route::put('/{id}/update', 'updateRole');
+                                Route::delete('/{id}/delete', 'deleteRole');
+                            });
+
+                        // Permissions
+                        Route::prefix('permission')
+                            ->group(function () {
+                                Route::get('/', 'getPermissions');
+                            });
+
+                        // Profile
+                        Route::get('/profile/{user_id}', 'getProfile');
+                        Route::post('/profile/change-phone-number', 'changePhoneNumber');
+                        Route::post('/profile/validate-phone-number', 'validatePhoneNumber');
+                    });
+
+                // Auth
                 Route::post('/auth/logout', [AuthController::class, 'logout']);
             });
     });
