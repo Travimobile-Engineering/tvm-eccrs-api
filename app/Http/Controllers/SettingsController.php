@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ChangePhoneNumberRequest;
+use App\Http\Requests\CreateAccountRequest;
 use App\Http\Requests\CreateRoleRequest;
+use App\Http\Requests\UpdateAccountRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
@@ -101,5 +103,48 @@ class SettingsController extends Controller
         ]);
 
         return $this->service->validatePhoneNumber($request);
+    }
+
+    public function createAccount(CreateAccountRequest $request)
+    {
+        return $this->service->createAccount($request);
+    }
+
+    public function getAccounts()
+    {
+        return $this->service->getAccounts();
+    }
+
+    public function getAccount($id)
+    {
+        return $this->service->getAccount($id);
+    }
+
+    public function updateAccount(UpdateAccountRequest $request, $id)
+    {
+        return $this->service->updateAccount($request, $id);
+    }
+
+    public function deleteAccount($id)
+    {
+        return $this->service->deleteAccount($id);
+    }
+
+    public function suspendAccount(Request $request)
+    {
+        $request->validate([
+            'user_id' => ['required', 'integer'],
+            'reason' => 'required|string|max:255',
+            'explanation' => 'nullable|string',
+            'indefinite' => 'required|boolean',
+            'end_date' => 'nullable|date|required_if:indefinite,false',
+        ]);
+
+        return $this->service->suspendAccount($request);
+    }
+
+    public function activateAccount(Request $request)
+    {
+        return $this->service->activateAccount($request);
     }
 }
