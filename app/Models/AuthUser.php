@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ class AuthUser extends Authenticatable implements JWTSubject
 
     protected $fillable = [
         'uuid',
+        'unique_id',
         'first_name',
         'last_name',
         'sms_verified',
@@ -61,6 +63,11 @@ class AuthUser extends Authenticatable implements JWTSubject
         'is_premium_driver',
         'reset_code',
         'reset_code_expires_at',
+        'organization_id',
+        'zone_id',
+        'state_id',
+        'platform',
+        'suspended_until',
     ];
 
     /**
@@ -107,6 +114,7 @@ class AuthUser extends Authenticatable implements JWTSubject
             'status' => UserStatus::class,
             'is_premium_driver' => 'boolean',
             'email_verified' => 'boolean',
+            'suspended_until' => 'datetime',
         ];
     }
 
@@ -120,14 +128,70 @@ class AuthUser extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function zoneModel()
+    {
+        return $this->belongsTo(Zone::class, 'zone_id');
+    }
+
+    public function stateModel()
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class, 'organization_id');
+    }
+
+    public function suspensions()
+    {
+        return $this->hasMany(Suspension::class, 'user_id');
+    }
+
+    public function latestSuspension()
+    {
+        return $this->hasOne(Suspension::class, 'user_id')->latestOfMany();
     }
 
     public function hasPermission(string $permission): bool
     {
         return $this->roles()->whereHas('permissions', fn ($q) => $q->where('name', $permission)
         )->exists();
+    }
+
+    public function assignRole(Role $role): void
+    {
+        $this->roles()->syncWithoutDetaching($role);
+    }
+
+    public function syncRoles(array $roles): void
+    {
+        $this->roles()->sync($roles);
+    }
+
+    public function role(): Attribute
+    {
+        return Attribute::get(
+            fn () => $this->roles()->first()
+        );
+    }
+
+    public function zone(): Attribute
+    {
+        return Attribute::get(
+            fn () => Zone::find($this->zone_id)
+        );
+    }
+
+    public function state(): Attribute
+    {
+        return Attribute::get(
+            fn () => State::find($this->state_id)
+        );
     }
 }

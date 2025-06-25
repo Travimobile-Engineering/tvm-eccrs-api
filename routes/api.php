@@ -59,6 +59,18 @@ Route::middleware('validate.header')
                 Route::prefix('settings')
                     ->controller(SettingsController::class)
                     ->group(function () {
+                        // Account
+                        Route::prefix('account')
+                            ->group(function () {
+                                Route::post('/create', 'createAccount');
+                                Route::post('/suspend', 'suspendAccount');
+                                Route::post('/activate', 'activateAccount');
+                                Route::get('/', 'getAccounts');
+                                Route::get('/{id}', 'getAccount');
+                                Route::put('/{id}/update', 'updateAccount');
+                                Route::delete('/{id}/delete', 'deleteAccount');
+                            });
+
                         // Organization
                         Route::prefix('organization')
                             ->group(function () {

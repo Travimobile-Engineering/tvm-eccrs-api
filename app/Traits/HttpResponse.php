@@ -22,7 +22,7 @@ trait HttpResponse
         ], $code);
     }
 
-    protected function withPagination($collection, ?string $message = null, $code = 200)
+    protected function withPagination($collection, ?string $message = null, $code = 200, ?array $extraMeta = [])
     {
         return response()->json([
             'status' => true,
@@ -36,6 +36,7 @@ trait HttpResponse
                 'prev_page_url' => $collection->previousPageUrl(),
                 'next_page_url' => $collection->nextPageUrl(),
             ],
+            'meta' => $extraMeta,
         ], $code);
     }
 }
