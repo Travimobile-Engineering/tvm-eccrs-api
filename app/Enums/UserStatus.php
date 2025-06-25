@@ -9,6 +9,7 @@ enum UserStatus: string
     case BLOCKED = 'blocked';
     case PENDING = 'pending';
     case DELETED = 'deleted';
+    case SUSPENDED = 'suspended';
 
     // Reason
     case FAILED_LOGIN_ATTEMPTS = 'failed_login_attempts';
@@ -21,6 +22,7 @@ enum UserStatus: string
             self::BLOCKED => 'Blocked',
             self::PENDING => 'Pending',
             self::DELETED => 'Deleted',
+            self::SUSPENDED => 'Suspended',
         };
     }
 
@@ -47,5 +49,10 @@ enum UserStatus: string
     public function isDeleted(): bool
     {
         return $this === self::DELETED;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this === self::SUSPENDED;
     }
 }
