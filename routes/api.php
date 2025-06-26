@@ -52,6 +52,7 @@ Route::middleware('validate.header')
                 Route::prefix('manifest')
                     ->controller(ManifestController::class)
                     ->group(function () {
+                        Route::get('/', 'getManifests');
                         Route::get('/{id}/detail', 'getManifestDetail');
                     });
 
