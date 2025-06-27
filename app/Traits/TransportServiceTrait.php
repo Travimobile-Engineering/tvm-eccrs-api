@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Trip;
+use Illuminate\Support\Collection;
 
 trait TransportServiceTrait
 {
@@ -34,5 +35,12 @@ trait TransportServiceTrait
             'inboundPercentageDiff' => calculatePercentageDifference( $lastMonthInboundPassengersCount, $inbound_passengers_count),
             'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengersCount, $outbound_passengers_count),
         ];
+    }
+
+    protected function getTotalBookings(Collection $bookings): int
+    {
+        return $bookings->count() + $bookings->sum(function($booking){
+            return $booking->travellingWith->count();
+        });
     }
 }

@@ -95,7 +95,7 @@ class TransportService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $allBookings = TripBooking::with(['trip' => fn($q) => $q->with('departureState', 'destinationState')])->get();
+        $allBookings = TripBooking::with(['travellingWith', 'trip' => fn($q) => $q->with('departureState', 'destinationState')])->get();
         $thisMonthBookings = $allBookings->filter(function($booking) use ($startThisMonth, $today) {
             return $booking->created_at >= $startThisMonth && $booking->created_at <= $today;
         });
@@ -103,34 +103,33 @@ class TransportService
             return $booking->created_at >= $startLastMonth && $booking->created_at <= $endLastMonth;
         });
 
-        $totalCancelledBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->status == 0)->count();
-        $totalconfirmedBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->confirmed == true)->count();
-        $totalUnconfirmedBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->confirmed == false)->count();
+        $totalCancelledBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->status == 0));
+        $totalconfirmedBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->on_seat == true));
+        $totalUnconfirmedBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->confirmed == false));
         
-        $passengersCountLast = $lastMonthBookings->count();
-        $passengersCountThis = $thisMonthBookings->count();
+        $passengersCountLast = $this->getTotalBookings($lastMonthBookings);
+        $passengersCountThis = $this->getTotalBookings($thisMonthBookings);
         
-        $roadPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road')->count();
-        $roadPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road')->count();
+        $roadPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road'));
+        $roadPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road'));
 
-        $airPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air')->count();
-        $airPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air')->count();
+        $airPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air'));
+        $airPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air'));
 
-        $trainPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train')->count();
-        $trainPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train')->count();
+        $trainPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train'));
+        $trainPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train'));
 
-        $seaPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea')->count();
-        $seaPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea')->count();
+        $seaPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea'));
+        $seaPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea'));
 
         $passengersTransported = collect();
-        $thisMonth = now()->month;
         $pastTwelvethMonth = now()->subMonths(12)->startOfMonth()->format('Y-m-d');
         $bookings = $allBookings->filter(function($booking) use ($pastTwelvethMonth) {
             return $booking->created_at >= $pastTwelvethMonth && $booking->created_at <= now();
         });
         
         for($i=0;$i<12;$i++){
-            $month =  now()->copy()->submMonths($i);
+            $month = now()->copy()->subMonths($i);
 
             $passengersTransported->push((object)[
                $month->monthName => [

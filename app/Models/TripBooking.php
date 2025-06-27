@@ -22,7 +22,9 @@ class TripBooking extends Model
 
     public function casts(){
         return [
-            'confirmed' => 'boolean'
+            'confirmed' => 'boolean',
+            'on_seat' => 'boolean',
+            'travelling_with' => 'array',
         ];
     }
 
@@ -34,6 +36,10 @@ class TripBooking extends Model
     public function trip()
     {
         return $this->belongsTo(Trip::class);
+    }
+
+    public function travellingWith(){
+        return $this->hasMany(TripBookingPassenger::class);
     }
 
     #[Scope]

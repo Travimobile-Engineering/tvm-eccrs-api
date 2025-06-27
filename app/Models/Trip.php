@@ -57,7 +57,7 @@ class Trip extends Model
 
     public function confirmedBookings()
     {
-        return $this->hasMany(TripBooking::class)->where('confirmed', true);
+        return $this->hasMany(TripBooking::class)->where('on_seat', true);
     }
 
     public function vehicle()
