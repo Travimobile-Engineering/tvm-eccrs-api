@@ -113,15 +113,6 @@ class TransportService
         $roadPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road'));
         $roadPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road'));
 
-        $airPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air'));
-        $airPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air'));
-
-        $trainPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train'));
-        $trainPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train'));
-
-        $seaPassengersCountLast = $this->getTotalBookings($lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea'));
-        $seaPassengersCountThis = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea'));
-
         $passengersTransported = collect();
         $pastTwelvethMonth = now()->subMonths(12)->startOfMonth()->format('Y-m-d');
         $bookings = $allBookings->filter(function($booking) use ($pastTwelvethMonth) {
@@ -157,20 +148,20 @@ class TransportService
                 'percentageDiff' => calculatePercentageDifference($passengersCountLast, $passengersCountThis),
             ],
             'air' => [
-                'total' => $airPassengersCountThis,
-                'percentageDiff' => calculatePercentageDifference($airPassengersCountLast, $airPassengersCountThis),
+                'total' =>null,
+                'percentageDiff' => null,
             ],
             'road' => [
                 'total' => $roadPassengersCountThis,
                 'percentageDiff' => calculatePercentageDifference($roadPassengersCountLast, $roadPassengersCountThis),
             ],
             'train' => [
-                'total' => $trainPassengersCountThis,
-                'percentageDiff' => calculatePercentageDifference($trainPassengersCountLast, $trainPassengersCountThis),
+                'total' => null,
+                'percentageDiff' => null,
             ],
             'sea' => [
-                'total' => $seaPassengersCountThis,
-                'percentageDiff' => calculatePercentageDifference($seaPassengersCountLast, $seaPassengersCountThis),
+                'total' => null,
+                'percentageDiff' => null,
             ],
             'passengers_transported' => $passengersTransported,
             'route_breakdown' => [
