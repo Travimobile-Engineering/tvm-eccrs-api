@@ -41,7 +41,7 @@ class UserService
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->paginate(25);
 
-        return $this->withPagination($agents->paginate(25)->toResourceCollection(), 'Agents retrieved successfully');
+        return $this->withPagination($agents->toResourceCollection(), 'Agents retrieved successfully');
     }
 
     public function getDrivers()
@@ -52,7 +52,7 @@ class UserService
             ->whereHas('vehicle')
             ->paginate(25);
 
-        return $this->withPagination($drivers->paginate(25)->toResourceCollection(), 'Drivers retrieved successfully');
+        return $this->withPagination($drivers->toResourceCollection(), 'Drivers retrieved successfully');
 
     }
 

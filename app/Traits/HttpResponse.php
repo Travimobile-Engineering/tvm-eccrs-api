@@ -28,6 +28,7 @@ trait HttpResponse
             'status' => true,
             'message' => $message,
             'data' => $collection->items(),
+            'additional_data' => $collection->additional[array_key_first($collection->additional)],
             'pagination' => [
                 'current_page' => $collection->currentPage(),
                 'last_page' => $collection->lastPage(),

@@ -20,7 +20,7 @@ Route::middleware('validate.header')
                 Route::post('/reset-password', 'resetPassword');
             });
 
-        Route::middleware(['auth:api', 'validate.header'])
+        Route::withoutMiddleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
                     ->controller(UserController::class)
@@ -43,6 +43,8 @@ Route::middleware('validate.header')
                         Route::get('/vehicle/{id}/detail', 'getVehicle');
                         Route::get('/{id}/vehicles', 'getVehicles');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
+                        Route::get('/stats', 'getStats');
+                        Route::get('/zone/{zone?}', 'getZoneData');
                     });
 
                 Route::prefix('manifest')
