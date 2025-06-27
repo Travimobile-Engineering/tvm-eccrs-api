@@ -11,10 +11,11 @@ use App\Models\TransitCompany;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\ZoneDataResource;
 use App\Http\Resources\TransportResource;
+use App\Traits\TransportServiceTrait;
 
 class TransportService
 {
-    use HttpResponse;
+    use HttpResponse, TransportServiceTrait;
 
     public function getCompanies()
     {
@@ -94,55 +95,51 @@ class TransportService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $totalCancelledBookingThisMonth = TripBooking::createdBetween($startThisMonth, $today)->where('status', 0)->count();
-        $totalconfirmedBookingThisMonth = TripBooking::createdBetween($startThisMonth, $today)->where('confirmed', 1)->count();
-        $totalUnconfirmedBookingThisMonth = TripBooking::createdBetween($startThisMonth, $today)->where('confirmed', 0)->count();
+        $allBookings = TripBooking::with(['trip' => fn($q) => $q->with('departureState', 'destinationState')])->get();
+        $thisMonthBookings = TripBooking::createdBetween($startThisMonth, $today)->get();
+        $lastMonthBookings = TripBooking::createdBetween($startLastMonth, $endLastMonth)->get();
 
-        $passengersCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)->count();
-        $passengersCountThis = TripBooking::createdBetween($startThisMonth, $today)->count();
+        $totalCancelledBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->status == 0)->count();
+        $totalconfirmedBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->confirmed == true)->count();
+        $totalUnconfirmedBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->confirmed == false)->count();
         
-        $roadPassengersCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)
-            ->whereHas('trip', fn($q) => $q->where('means', 'road'))
-            ->count();
-        $roadPassengersCountThis = TripBooking::createdBetween($startThisMonth, $today)
-            ->whereHas('trip', fn($q) => $q->where('means', 'road'))
-            ->count();
+        $passengersCountLast = $lastMonthBookings->count();
+        $passengersCountThis = $thisMonthBookings->count();
+        
+        $roadPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road')->count();
+        $roadPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'road')->count();
 
-        $airPassengersCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)
-            ->whereHas('trip', fn($q) => $q->where('means', 'air'))
-            ->count();
-        $airPassengersCountThis = TripBooking::createdBetween($startThisMonth, $today)
-            ->whereHas('trip', fn($q) => $q->where('means', 'air'))
-            ->count();
+        $airPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air')->count();
+        $airPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'air')->count();
 
-        $trainPassengersCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)
-            ->whereHas('trip', fn($q) => $q->where('means', 'train'))
-            ->count();
-        $trainPassengersCountThis = TripBooking::createdBetween($startThisMonth, $today)
-            ->whereHas('trip', fn($q) => $q->where('means', 'train'))
-            ->count();
+        $trainPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train')->count();
+        $trainPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'train')->count();
 
-        $seaPassengersCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)
-            ->whereHas('trip', fn($q) => $q->where('means', 'sea'))
-            ->count();
-        $seaPassengersCountThis = TripBooking::createdBetween($startThisMonth, $today)
-            ->whereHas('trip', fn($q) => $q->where('means', 'sea'))
-            ->count();
+        $seaPassengersCountLast = $lastMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea')->count();
+        $seaPassengersCountThis = $thisMonthBookings->filter(fn($booking) => $booking->trip?->means == 'sea')->count();
 
         $passengersTransported = collect();
+        $thisMonth = now()->month;
+        $pastTwelvethMonth = now()->month($thisMonth - 12)->startOfMonth()->format('Y-m-d');
+        $bookings = TripBooking::with('trip')->createdBetween($pastTwelvethMonth, now())->get();
+        
         for($i=0;$i<12;$i++){
-
-            $thisMonth = now()->month;
             $month =  now()->month( $thisMonth - $i);
-            $bookings = TripBooking::createdBetween($month->startOfMonth()->format('Y-m-d'), $month->endOfMonth()->format('Y-m-d'));
-
 
             $passengersTransported->push((object)[
                $month->monthName => [
-                    'road' => $bookings->whereHas('trip', fn($q) => $q->where('means', 'road'))->count(),
-                    'sea' => $bookings->whereHas('trip', fn($q) => $q->where('means', 'sea'))->count(),
-                    'rail' => $bookings->whereHas('trip', fn($q) => $q->where('means', 'rail'))->count(),
-                    'air' => $bookings->whereHas('trip', fn($q) => $q->where('means', 'air'))->count(),
+                    'road' => $bookings->filter(function($booking) use($month){
+                        return $booking->trip?->means == 'road' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
+                    })->count(),
+                    'sea' => $bookings->filter(function($booking) use($month){
+                        return $booking->trip?->means == 'sea' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
+                    })->count(),
+                    'rail' => $bookings->filter(function($booking) use($month){
+                        return $booking->trip?->means == 'rail' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
+                    })->count(),
+                    'air' => $bookings->filter(function($booking) use($month){
+                        return $booking->trip?->means == 'air' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
+                    })->count(),
                     'year' => $month->year,
                     
                ]
@@ -172,29 +169,14 @@ class TransportService
             ],
             'passengers_transported' => $passengersTransported,
             'route_breakdown' => [
-                'lagos_abuja' => TripBooking::whereHas('trip', function($query){
-                    $query->whereHas('departureState', function($q){
-                        $q->where('states.name', 'Lagos');
-                    })
-                    ->whereHas('destinationState', function($q){
-                        $q->where('states.name', 'FCT');
-                    });
+                'lagos_abuja' => $allBookings->filter(function($booking){
+                    return $booking->trip?->departureState->name == 'Lagos' && $booking->trip?->destinationState->name == 'FCT';
                 })->count(),
-                'rivers_lagos' => TripBooking::whereHas('trip', function($query){
-                    $query->whereHas('departureState', function($q){
-                        $q->where('states.name', 'Rivers');
-                    })
-                    ->whereHas('destinationState', function($q){
-                        $q->where('states.name', 'Lagos');
-                    });
+                'rivers_lagos' => $allBookings->filter(function($booking){
+                    return $booking->trip?->departureState->name == 'Rivers' && $booking->trip?->destinationState->name == 'Lagos';
                 })->count(),
-                'portharcourt_enugu' => TripBooking::whereHas('trip', function($query){
-                    $query->whereHas('departureState', function($q){
-                        $q->where('states.name', 'Port Harcourt');
-                    })
-                    ->whereHas('destinationState', function($q){
-                        $q->where('states.name', 'Enugu');
-                    });
+                'portharcourt_enugu' => $allBookings->filter(function($booking){
+                    return $booking->trip?->departureState->name == 'Port Harcourt' && $booking->trip?->destinationState->name == 'Enugu';
                 })->count(),
             ],
             'passenger_booking_overview' => [
@@ -257,8 +239,10 @@ class TransportService
         ->groupBy('route', 'id', 'departure', 'destination', 'means')
         ->orderBy('trips_count', 'desc');
 
-        return $this->withPagination(ZoneDataResource::collection($trips->paginate())->additional([
-            'additional' => [
+        return $this->withPagination(ZoneDataResource::collection($trips->paginate()),
+            'Zone data retrieved successfully', 
+            200, 
+            [
                 'inbound_passengers' => [
                     'total' => $vars['inbound_passengers_count'],
                     'percentageDiff' => $vars['inboundPercentageDiff'],
@@ -271,36 +255,6 @@ class TransportService
                 'most_active_destination_state' => $trips->first()?->destinationState->name,
                 'top_mode' => $trips->first()?->means,
             ]
-        ]), 'Zone data retrieved successfully');
-    }
-
-    protected function getInboundPassengersCount(array $states, $from = null, $to = null){
-        return Trip::whereHas('destinationState', fn($q) => $q->whereIn('states.name', $states))
-        ->between($from ?? now()->startOfMonth(), $to ?? now())
-        ->count();
-    }
-
-    protected function getOutboundPassengersCount(array $states, $from = null, $to = null){
-        return Trip::whereHas('departureState', fn($q) => $q->whereIn('states.name', $states))
-        ->between($from ?? now()->startOfMonth(), $to ?? now())
-        ->count();
-    }
-
-    protected function setInboundOutboundData(array $states){
-        $lastMonthStart = now()->subMonth()->startOfMonth();
-        $lastMonthEnd = now()->subMonth()->endOfMonth();
-        $inbound_passengers_count = $this->getInboundPassengersCount($states);
-        $outbound_passengers_count = $this->getOutboundPassengersCount($states);
-        $lastMonthInboundPassengersCount = $this->getInboundPassengersCount($states, $lastMonthStart, $lastMonthEnd);
-        $lastMonthOutboundPassengersCount = $this->getOutboundPassengersCount($states, $lastMonthStart, $lastMonthEnd);
-
-        return [
-            'inbound_passengers_count' => $inbound_passengers_count,
-            'outbound_passengers_count' => $outbound_passengers_count,
-            'lastMonthInboundPassengersCount' => $lastMonthInboundPassengersCount,
-            'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengersCount,
-            'inboundPercentageDiff' => calculatePercentageDifference( $lastMonthInboundPassengersCount, $inbound_passengers_count),
-            'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengersCount, $outbound_passengers_count),
-        ];
+        );
     }
 }

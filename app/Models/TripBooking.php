@@ -20,6 +20,12 @@ class TripBooking extends Model
         'payment_status',
     ];
 
+    public function casts(){
+        return [
+            'confirmed' => 'boolean'
+        ];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

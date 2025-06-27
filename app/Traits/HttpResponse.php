@@ -22,13 +22,12 @@ trait HttpResponse
         ], $code);
     }
 
-    protected function withPagination($collection, ?string $message = null, $code = 200)
+    protected function withPagination($collection, ?string $message = null, $code = 200, ?array $extraMeta = [])
     {
         return response()->json([
             'status' => true,
             'message' => $message,
             'data' => $collection->items(),
-            'additional_data' => $collection->additional[array_key_first($collection->additional)],
             'pagination' => [
                 'current_page' => $collection->currentPage(),
                 'last_page' => $collection->lastPage(),
@@ -37,6 +36,7 @@ trait HttpResponse
                 'prev_page_url' => $collection->previousPageUrl(),
                 'next_page_url' => $collection->nextPageUrl(),
             ],
+            'meta' => $extraMeta,
         ], $code);
     }
 }

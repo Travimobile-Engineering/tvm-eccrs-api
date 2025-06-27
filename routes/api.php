@@ -20,7 +20,7 @@ Route::middleware('validate.header')
                 Route::post('/reset-password', 'resetPassword');
             });
 
-        Route::withoutMiddleware(['auth:api', 'validate.header'])
+        Route::middleware(['auth:api', 'validate.header'])
             ->group(function () {
                 Route::prefix('user')
                     ->controller(UserController::class)
