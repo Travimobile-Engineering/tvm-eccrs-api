@@ -96,8 +96,12 @@ class TransportService
         $today = now()->startOfDay();
 
         $allBookings = TripBooking::with(['trip' => fn($q) => $q->with('departureState', 'destinationState')])->get();
-        $thisMonthBookings = TripBooking::createdBetween($startThisMonth, $today)->get();
-        $lastMonthBookings = TripBooking::createdBetween($startLastMonth, $endLastMonth)->get();
+        $thisMonthBookings = $allBookings->filter(function($booking) use ($startThisMonth, $today) {
+            return $booking->created_at >= $startThisMonth && $booking->created_at <= $today;
+        });
+        $lastMonthBookings = $allBookings->filter(function($booking) use ($startLastMonth, $endLastMonth) {
+            return $booking->created_at >= $startLastMonth && $booking->created_at <= $endLastMonth;
+        });
 
         $totalCancelledBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->status == 0)->count();
         $totalconfirmedBookingThisMonth = $thisMonthBookings->filter(fn($booking) => $booking->confirmed == true)->count();
@@ -120,11 +124,13 @@ class TransportService
 
         $passengersTransported = collect();
         $thisMonth = now()->month;
-        $pastTwelvethMonth = now()->month($thisMonth - 12)->startOfMonth()->format('Y-m-d');
-        $bookings = TripBooking::with('trip')->createdBetween($pastTwelvethMonth, now())->get();
+        $pastTwelvethMonth = now()->subMonths(12)->startOfMonth()->format('Y-m-d');
+        $bookings = $allBookings->filter(function($booking) use ($pastTwelvethMonth) {
+            return $booking->created_at >= $pastTwelvethMonth && $booking->created_at <= now();
+        });
         
         for($i=0;$i<12;$i++){
-            $month =  now()->month( $thisMonth - $i);
+            $month =  now()->copy()->submMonths($i);
 
             $passengersTransported->push((object)[
                $month->monthName => [
