@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Platform;
 use App\Enums\UserStatus;
+use App\Enums\UserType;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\ProfileResource;
 use App\Libraries\Utility;
@@ -238,6 +239,7 @@ class SettingsService
                 'phone_number' => formatPhoneNumber($request->phone_number),
                 'nin' => $nin,
                 'password' => bcrypt($request->password),
+                'user_category' => UserType::SUPER_ADMIN->value,
                 'organization_id' => $request->organization_id,
                 'zone_id' => $request->zone_id,
                 'state_id' => $request->state_id,
