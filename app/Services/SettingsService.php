@@ -236,6 +236,8 @@ class SettingsService
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'email' => $request->email,
+                'email_verified' => true,
+                'email_verified_at' => now(),
                 'phone_number' => formatPhoneNumber($request->phone_number),
                 'nin' => $nin,
                 'password' => bcrypt($request->password),
