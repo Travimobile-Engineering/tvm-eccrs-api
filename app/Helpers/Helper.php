@@ -14,7 +14,7 @@ if (! function_exists('calculatePercentageDifference')) {
 
         $diff = (($value2 - $value1) / $value1) * 100;
 
-        return $diff > 0 ? $diff : 0;
+        return number_format($diff, 2);
     }
 }
 
