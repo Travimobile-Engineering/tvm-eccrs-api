@@ -37,7 +37,6 @@ class TripBooking extends Model
     {
         return $this->belongsTo(Trip::class);
     }
-
     public function travellingWith(){
         return $this->hasMany(TripBookingPassenger::class);
     }

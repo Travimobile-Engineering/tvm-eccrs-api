@@ -4,16 +4,20 @@ namespace App\Services;
 
 use App\Enums\UserType;
 use App\Enums\Zones;
-use App\Models\RouteSubregion;
 use App\Models\State;
 use App\Models\TransitCompany;
 use App\Models\TripBooking;
 use App\Models\User;
+use App\Services\Actions\UserActionService;
 use App\Traits\HttpResponse;
 
 class UserService
 {
     use HttpResponse;
+
+    public function __construct(
+        protected UserActionService $actionService,
+    ) {}
 
     public function getTravellers()
     {
@@ -119,14 +123,14 @@ class UserService
             $states = collect(Zones::tryFrom(request()->input('zone'))?->states());
             $activities = collect();
             $states->map(function ($state) use ($activities) {
-                $activities[$state] = $this->getStateActivityCount($state);
+                $activities[$state] = $this->actionService->getStateActivityCount($state);
             });
 
             return $this->success($activities->toArray(), 'Activities retrieved successfully');
         }
 
         if (request()->filled('state')) {
-            return $this->success($this->getStateActivityCount(request()->input('state'), true)->toArray(), 'Activities retrieved successfully');
+            return $this->success($this->actionService->getStateActivityCount(request()->input('state'), true)->toArray(), 'Activities retrieved successfully');
         }
 
         if (request()->filled('user')) {
@@ -134,12 +138,12 @@ class UserService
         }
 
         return $this->success([
-            'north_central' => $this->getZoneActivities(Zones::NORTHCENTRAL->states()),
-            'north_east' => $this->getZoneActivities(Zones::NORTHEAST->states()),
-            'north_west' => $this->getZoneActivities(Zones::NORTHWEST->states()),
-            'south_south' => $this->getZoneActivities(Zones::SOUTHSOUTH->states()),
-            'south_east' => $this->getZoneActivities(Zones::SOUTHEAST->states()),
-            'south_west' => $this->getZoneActivities(Zones::SOUTHWEST->states()),
+            'north_central' => $this->actionService->getZoneActivities(Zones::NORTHCENTRAL->states()),
+            'north_east' => $this->actionService->getZoneActivities(Zones::NORTHEAST->states()),
+            'north_west' => $this->actionService->getZoneActivities(Zones::NORTHWEST->states()),
+            'south_south' => $this->actionService->getZoneActivities(Zones::SOUTHSOUTH->states()),
+            'south_east' => $this->actionService->getZoneActivities(Zones::SOUTHEAST->states()),
+            'south_west' => $this->actionService->getZoneActivities(Zones::SOUTHWEST->states()),
         ], 'Activities retrieved successfully');
     }
 
@@ -178,39 +182,5 @@ class UserService
         });
 
         return $this->success($activities, 'Activities retrieved successfully');
-    }
-
-    private function getZoneActivities(array $zone): int
-    {
-        $cities = State::getZoneCities($zone);
-
-        return TripBooking::whereHas('trip', function ($query) use ($cities) {
-            $query->whereIn('departure', $cities)
-                ->orWhereIn('destination', $cities);
-        })->count();
-    }
-
-    private function getStateActivityCount(string $state, $showCities = false): mixed
-    {
-        $state = State::with('cities')->where('name', $state)->first();
-
-        if ($showCities) {
-
-            $city_ids = $state->cities->map(fn ($city) => $city->id);
-            $cities = RouteSubregion::with('departingTripBookings', 'arrivingTripBookings')->whereIn('id', $city_ids)->get();
-            $data = collect();
-            $cities->each(function ($city) use ($data) {
-                $data[$city->name] = $city->departingTripBookings->count() + $city->arrivingTripBookings->count();
-            });
-
-            return $data;
-        } else {
-            $cities = $state->cities->map(fn ($city) => $city->id);
-
-            return TripBooking::whereHas('trip', function ($query) use ($cities) {
-                $query->whereIn('departure', $cities)
-                    ->orWhereIn('destination', $cities);
-            })->count();
-        }
     }
 }

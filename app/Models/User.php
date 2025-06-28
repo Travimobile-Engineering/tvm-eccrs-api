@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Traits\UserTrait;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, UserTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -109,6 +111,7 @@ class User extends Authenticatable
             ->where('agent_id', '!=', '');
     }
 
+    #[Scope]
     protected function scopeSearch(Builder $query, string $keyword)
     {
         $query->where(fn ($q) => $q
