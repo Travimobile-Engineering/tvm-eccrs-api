@@ -127,15 +127,6 @@ class TransportService
                     'road' => $bookings->filter(function($booking) use($month){
                         return $booking->trip?->means == 'road' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
                     })->count(),
-                    'sea' => $bookings->filter(function($booking) use($month){
-                        return $booking->trip?->means == 'sea' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
-                    })->count(),
-                    'rail' => $bookings->filter(function($booking) use($month){
-                        return $booking->trip?->means == 'rail' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
-                    })->count(),
-                    'air' => $bookings->filter(function($booking) use($month){
-                        return $booking->trip?->means == 'air' && ($booking->created_at >= $month->startOfMonth() && $booking->created_at <= $month->endOfMonth());
-                    })->count(),
                     'year' => $month->year,
                     
                ]
@@ -188,7 +179,7 @@ class TransportService
     {
         $vars = null;
 
-        $trips = Trip::with('departureState', 'destinationState', 'bookings', 'confirmedBookings')
+        $trips = Trip::with('departureState', 'destinationState', 'bookings')
         ->when(request('mode'), fn($q, $mode) => $q->where('means', $mode))
         ->when($zone && !request('state') && !request('search'), function($query) use($zone, &$vars){
             
