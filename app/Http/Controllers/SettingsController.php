@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ChangePhoneNumberRequest;
 use App\Http\Requests\CreateAccountRequest;
 use App\Http\Requests\CreateRoleRequest;
+use App\Http\Requests\OrganizationRequest;
+use App\Http\Requests\SuspendAccountRequest;
 use App\Http\Requests\UpdateAccountRequest;
 use App\Http\Requests\UpdateRoleRequest;
+use App\Http\Requests\ValidatePhoneNumberRequest;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 
@@ -50,13 +54,8 @@ class SettingsController extends Controller
         return $this->service->getPermissions();
     }
 
-    public function createOrganization(Request $request)
+    public function createOrganization(OrganizationRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string|max:1000',
-        ]);
-
         return $this->service->createOrganization($request);
     }
 
@@ -70,13 +69,8 @@ class SettingsController extends Controller
         return $this->service->getOrganization($id);
     }
 
-    public function updateOrganization(Request $request, $id)
+    public function updateOrganization(OrganizationRequest $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string|max:1000',
-        ]);
-
         return $this->service->updateOrganization($request, $id);
     }
 
@@ -95,13 +89,8 @@ class SettingsController extends Controller
         return $this->service->changePhoneNumber($request);
     }
 
-    public function validatePhoneNumber(Request $request)
+    public function validatePhoneNumber(ValidatePhoneNumberRequest $request)
     {
-        $request->validate([
-            'phone_number' => 'required|string|max:15',
-            'code' => 'required|string|max:5',
-        ]);
-
         return $this->service->validatePhoneNumber($request);
     }
 
@@ -130,21 +119,18 @@ class SettingsController extends Controller
         return $this->service->deleteAccount($id);
     }
 
-    public function suspendAccount(Request $request)
+    public function suspendAccount(SuspendAccountRequest $request)
     {
-        $request->validate([
-            'user_id' => ['required', 'integer'],
-            'reason' => 'required|string|max:255',
-            'explanation' => 'nullable|string',
-            'indefinite' => 'required|boolean',
-            'end_date' => 'nullable|date|required_if:indefinite,false',
-        ]);
-
         return $this->service->suspendAccount($request);
     }
 
     public function activateAccount(Request $request)
     {
         return $this->service->activateAccount($request);
+    }
+
+    public function changePasword(ChangePasswordRequest $request)
+    {
+        return $this->service->changePassword($request);
     }
 }

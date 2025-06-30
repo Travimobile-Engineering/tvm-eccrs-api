@@ -12,4 +12,9 @@ class Organization extends Model
         'name',
         'address',
     ];
+
+    public function users()
+    {
+        return $this->hasMany(AuthUser::class, 'organization_id');
+    }
 }

@@ -66,6 +66,7 @@ Route::middleware('validate.header')
                                 Route::post('/create', 'createAccount');
                                 Route::post('/suspend', 'suspendAccount');
                                 Route::post('/activate', 'activateAccount');
+                                Route::post('/change-password', 'changePasword');
                                 Route::get('/', 'getAccounts');
                                 Route::get('/{id}', 'getAccount');
                                 Route::put('/{id}/update', 'updateAccount');
