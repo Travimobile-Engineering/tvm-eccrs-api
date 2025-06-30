@@ -7,19 +7,22 @@ use Illuminate\Support\Collection;
 
 trait TransportServiceTrait
 {
-    protected function getInboundPassengersCount(array $states, $from = null, $to = null){
-        return Trip::whereHas('destinationState', fn($q) => $q->whereIn('states.name', $states))
-        ->between($from ?? now()->startOfMonth(), $to ?? now())
-        ->count();
+    protected function getInboundPassengersCount(array $states, $from = null, $to = null)
+    {
+        return Trip::whereHas('destinationState', fn ($q) => $q->whereIn('states.name', $states))
+            ->between($from ?? now()->startOfMonth(), $to ?? now())
+            ->count();
     }
 
-    protected function getOutboundPassengersCount(array $states, $from = null, $to = null){
-        return Trip::whereHas('departureState', fn($q) => $q->whereIn('states.name', $states))
-        ->between($from ?? now()->startOfMonth(), $to ?? now())
-        ->count();
+    protected function getOutboundPassengersCount(array $states, $from = null, $to = null)
+    {
+        return Trip::whereHas('departureState', fn ($q) => $q->whereIn('states.name', $states))
+            ->between($from ?? now()->startOfMonth(), $to ?? now())
+            ->count();
     }
 
-    protected function setInboundOutboundData(array $states){
+    protected function setInboundOutboundData(array $states)
+    {
         $lastMonthStart = now()->subMonth()->startOfMonth();
         $lastMonthEnd = now()->subMonth()->endOfMonth();
         $inbound_passengers_count = $this->getInboundPassengersCount($states);
@@ -32,33 +35,28 @@ trait TransportServiceTrait
             'outbound_passengers_count' => $outbound_passengers_count,
             'lastMonthInboundPassengersCount' => $lastMonthInboundPassengersCount,
             'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengersCount,
-            'inboundPercentageDiff' => calculatePercentageDifference( $lastMonthInboundPassengersCount, $inbound_passengers_count),
+            'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengersCount, $inbound_passengers_count),
             'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengersCount, $outbound_passengers_count),
         ];
     }
 
     protected function getTotalBookings(Collection $bookings): int
     {
-        return $bookings->sum(function($booking){
-            return $booking->travellingWith->count();
-        });
+        return $bookings->flatMap->travellingWith->count();
     }
 
-    protected function getTotalConfirmedBookings(Collection $bookings){
-        return $bookings->sum(function($booking){
-            return $booking->travellingWith->filter(fn($b) => $b->on_seat == true)->count();
-        });
+    protected function getTotalConfirmedBookings(Collection $bookings): int
+    {
+        return $bookings->flatMap->travellingWith->filter->on_seat->count();
     }
 
-    protected function getTotalUnconfirmedBookings(Collection $bookings){
-        return $bookings->sum(function($booking){
-            return $booking->travellingWith->filter(fn($b) => $b->on_seat == false)->count();
-        });
+    protected function getTotalUnconfirmedBookings(Collection $bookings): int
+    {
+        return $bookings->flatMap->travellingWith->reject->on_seat->count();
     }
 
-    protected function getTotalCancelledBookings(Collection $bookings){
-        return $bookings->sum(function($booking){
-            return $booking->travellingWith->filter(fn($b) => $b->status == false)->count();
-        });
+    protected function getTotalCancelledBookings(Collection $bookings): int
+    {
+        return $bookings->flatMap->travellingWith->filter(fn ($b) => $b->status === 0)->count();
     }
 }

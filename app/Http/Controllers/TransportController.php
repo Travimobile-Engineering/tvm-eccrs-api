@@ -40,11 +40,13 @@ class TransportController extends Controller
         return $this->service->getTrips($id, $status);
     }
 
-    public function getStats(){
+    public function getStats()
+    {
         return $this->service->getStats();
     }
 
-    public function getZoneData($zone = null){
+    public function getZoneData($zone = null)
+    {
         return $this->service->getZoneData($zone);
     }
 }
