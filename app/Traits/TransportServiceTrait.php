@@ -39,8 +39,26 @@ trait TransportServiceTrait
 
     protected function getTotalBookings(Collection $bookings): int
     {
-        return $bookings->count() + $bookings->sum(function($booking){
+        return $bookings->sum(function($booking){
             return $booking->travellingWith->count();
+        });
+    }
+
+    protected function getTotalConfirmedBookings(Collection $bookings){
+        return $bookings->sum(function($booking){
+            return $booking->travellingWith->filter(fn($b) => $b->on_seat == true)->count();
+        });
+    }
+
+    protected function getTotalUnconfirmedBookings(Collection $bookings){
+        return $bookings->sum(function($booking){
+            return $booking->travellingWith->filter(fn($b) => $b->on_seat == false)->count();
+        });
+    }
+
+    protected function getTotalCancelledBookings(Collection $bookings){
+        return $bookings->sum(function($booking){
+            return $booking->travellingWith->filter(fn($b) => $b->status == false)->count();
         });
     }
 }

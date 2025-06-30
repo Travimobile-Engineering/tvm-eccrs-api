@@ -103,9 +103,9 @@ class TransportService
             return $booking->created_at >= $startLastMonth && $booking->created_at <= $endLastMonth;
         });
 
-        $totalCancelledBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->status == 0));
-        $totalconfirmedBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->on_seat == true));
-        $totalUnconfirmedBookingThisMonth = $this->getTotalBookings($thisMonthBookings->filter(fn($booking) => $booking->confirmed == false));
+        $totalCancelledBookingThisMonth = $this->getTotalCancelledBookings($thisMonthBookings);
+        $totalconfirmedBookingThisMonth = $this->getTotalConfirmedBookings($thisMonthBookings);
+        $totalUnconfirmedBookingThisMonth = $this->getTotalUnconfirmedBookings($thisMonthBookings);
         
         $passengersCountLast = $this->getTotalBookings($lastMonthBookings);
         $passengersCountThis = $this->getTotalBookings($thisMonthBookings);
