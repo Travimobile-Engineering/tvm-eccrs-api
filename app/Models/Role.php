@@ -8,7 +8,16 @@ class Role extends Model
 {
     protected $connection = 'authuser';
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'description', 'login_enabled'];
+
+    protected $hidden = ['created_at', 'updated_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'login_enabled' => 'boolean',
+        ];
+    }
 
     public function permissions()
     {

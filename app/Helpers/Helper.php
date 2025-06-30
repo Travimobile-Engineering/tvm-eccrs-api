@@ -107,3 +107,10 @@ if (! function_exists('getCode')) {
         return str_pad(rand(0, 99999), $length, '0', STR_PAD_LEFT);
     }
 }
+
+if (! function_exists('sendSmS')) {
+    function sendSmS($phone, $message)
+    {
+        return app(SMS::class)->sendSms($phone, $message);
+    }
+}

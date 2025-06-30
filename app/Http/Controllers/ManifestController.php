@@ -10,6 +10,11 @@ class ManifestController extends Controller
         protected ManifestService $service
     ) {}
 
+    public function getManifests()
+    {
+        return $this->service->getManifests();
+    }
+
     public function getManifestDetail($id)
     {
         return $this->service->getManifestDetail($id);

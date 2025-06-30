@@ -32,6 +32,10 @@ trait LoginTrait
         if ($user->status->isDeleted()) {
             return $this->error(null, 'Account is deleted!', 400);
         }
+
+        if ($user->status->isSuspended()) {
+            return $this->error(null, 'Account is suspended!', 400);
+        }
     }
 
     protected function additionalData($user): array
