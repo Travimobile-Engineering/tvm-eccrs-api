@@ -46,6 +46,8 @@ Route::middleware('validate.header')
                         Route::get('/vehicle/{id}/detail', 'getVehicle');
                         Route::get('/{id}/vehicles', 'getVehicles');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
+                        Route::get('/stats', 'getStats');
+                        Route::get('/zone/{zone?}', 'getZoneData');
                     });
 
                 // Manifest
@@ -66,6 +68,7 @@ Route::middleware('validate.header')
                                 Route::post('/create', 'createAccount');
                                 Route::post('/suspend', 'suspendAccount');
                                 Route::post('/activate', 'activateAccount');
+                                Route::post('/change-password', 'changePasword');
                                 Route::get('/', 'getAccounts');
                                 Route::get('/{id}', 'getAccount');
                                 Route::put('/{id}/update', 'updateAccount');
