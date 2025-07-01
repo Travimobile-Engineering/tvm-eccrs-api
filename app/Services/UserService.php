@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\UserType;
 use App\Enums\Zones;
+use App\Http\Resources\UserResource;
 use App\Models\State;
 use App\Models\TransitCompany;
 use App\Models\TripBooking;
@@ -22,9 +23,10 @@ class UserService
     public function getTravellers()
     {
         $travellers = User::whereHas('tripBookings')
-            ->when(request('search'), fn ($q, $search) => $q->search($search));
+            ->when(request('search'), fn ($q, $search) => $q->search($search))
+            ->paginate(25);
 
-        return $this->withPagination($travellers->paginate(25)->toResourceCollection(), 'Travellers retrieved successfully');
+        return $this->withPagination(UserResource::collection($travellers), 'Travellers retrieved successfully');
     }
 
     public function getUserDetail($id)
@@ -45,7 +47,7 @@ class UserService
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->paginate(25);
 
-        return $this->withPagination($agents->toResourceCollection(), 'Agents retrieved successfully');
+        return $this->withPagination(UserResource::collection($agents), 'Agents retrieved successfully');
     }
 
     public function getDrivers()
@@ -56,8 +58,7 @@ class UserService
             ->whereHas('vehicle')
             ->paginate(25);
 
-        return $this->withPagination($drivers->toResourceCollection(), 'Drivers retrieved successfully');
-
+        return $this->withPagination(UserResource::collection($drivers), 'Drivers retrieved successfully');
     }
 
     public function stats()
