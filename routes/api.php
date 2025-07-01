@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
@@ -106,6 +107,9 @@ Route::middleware('validate.header')
                         Route::post('/profile/change-phone-number', 'changePhoneNumber');
                         Route::post('/profile/validate-phone-number', 'validatePhoneNumber');
                     });
+
+                // Other APIs
+                Route::get('/states', [GeneralController::class, 'getStates']);
 
                 // Auth
                 Route::post('/auth/logout', [AuthController::class, 'logout']);

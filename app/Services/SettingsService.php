@@ -194,7 +194,6 @@ class SettingsService
             $phone = formatPhoneNumber($request->phone_number);
 
             $user = AuthUser::where('id', $request->user_id)
-                ->where('phone_number', $phone)
                 ->first();
 
             if (! $user) {
@@ -249,8 +248,10 @@ class SettingsService
             $lastName = explode(' ', $name)[1];
             $nin = Utility::encrypt($request->nin, config('security.encoding_key'));
 
+            $uniqueId = generateUniqueNumber('users', 'unique_id', 9);
+
             $user = AuthUser::create([
-                'unique_id' => $request->user_id,
+                'unique_id' => $uniqueId,
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'email' => $request->email,
@@ -264,6 +265,7 @@ class SettingsService
                 'zone_id' => $request->zone_id,
                 'state_id' => $request->state_id,
                 'verification_code' => 0,
+                'login_enabled' => $request->login_enabled,
                 'platform' => Platform::ECCRS->value,
                 'status' => UserStatus::ACTIVE->value,
             ]);

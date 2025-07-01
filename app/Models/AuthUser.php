@@ -68,6 +68,7 @@ class AuthUser extends Authenticatable implements JWTSubject
         'state_id',
         'platform',
         'suspended_until',
+        'login_enabled',
     ];
 
     /**
@@ -115,6 +116,7 @@ class AuthUser extends Authenticatable implements JWTSubject
             'is_premium_driver' => 'boolean',
             'email_verified' => 'boolean',
             'suspended_until' => 'datetime',
+            'login_enabled' => 'boolean',
         ];
     }
 
