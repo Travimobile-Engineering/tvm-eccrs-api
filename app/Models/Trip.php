@@ -59,4 +59,19 @@ class Trip extends Model
     {
         return $this->belongsTo(Vehicle::class);
     }
+
+    public function departureState()
+    {
+        return $this->hasOneThrough(State::class, RouteSubregion::class, 'id', 'id', 'departure', 'state_id');
+    }
+
+    public function destinationState()
+    {
+        return $this->hasOneThrough(State::class, RouteSubregion::class, 'id', 'id', 'destination', 'state_id');
+    }
+
+    public function scopeBetween($query, $from, $to)
+    {
+        $query->whereBetween('created_at', [$from, $to]);
+    }
 }

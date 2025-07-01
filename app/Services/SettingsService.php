@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\Zone;
 use App\Traits\HttpResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class SettingsService
 {
@@ -80,6 +81,10 @@ class SettingsService
             return $this->error(null, 'Role not found', 404);
         }
 
+        if ($role->users()->exists()) {
+            return $this->error(null, 'Cannot delete role. One or more users are assigned to this role.', 400);
+        }
+
         $role->delete();
 
         return $this->success(null, 'Role deleted successfully');
@@ -108,7 +113,13 @@ class SettingsService
 
     public function getOrganizations()
     {
-        $organizations = Organization::select('id', 'name', 'address')->get();
+        $organizations = Organization::select('id', 'name', 'address')
+            ->get()
+            ->map(function ($org) {
+                $org->has_users = $org->users()->exists();
+
+                return $org;
+            });
 
         if ($organizations->isEmpty()) {
             return $this->error(null, 'No organizations found', 404);
@@ -119,11 +130,14 @@ class SettingsService
 
     public function getOrganization($id)
     {
-        $organization = Organization::select('id', 'name', 'address')->find($id);
+        $organization = Organization::select('id', 'name', 'address')
+            ->find($id);
 
         if (! $organization) {
             return $this->error(null, 'Organization not found', 404);
         }
+
+        $organization->has_users = $organization->users()->exists();
 
         return $this->success($organization, 'Organization retrieved successfully');
     }
@@ -146,10 +160,14 @@ class SettingsService
 
     public function deleteOrganization($id)
     {
-        $organization = Organization::find($id);
+        $organization = Organization::with('users')->find($id);
 
         if (! $organization) {
             return $this->error(null, 'Organization not found', 404);
+        }
+
+        if ($organization->users()->exists()) {
+            return $this->error(null, 'Cannot delete organization. One or more users are assigned to this organization.', 400);
         }
 
         $organization->delete();
@@ -426,5 +444,20 @@ class SettingsService
         ]);
 
         return $this->success(null, 'Account activated successfully');
+    }
+
+    public function changePassword($request)
+    {
+        $user = AuthUser::findOrFail($request->user_id);
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return $this->error(null, 'Current password is incorrect', 400);
+        }
+
+        $user->update([
+            'password' => bcrypt($request->new_password),
+        ]);
+
+        return $this->success(null, 'Password changed successfully');
     }
 }

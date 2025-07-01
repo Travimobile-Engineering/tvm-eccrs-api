@@ -24,6 +24,7 @@ class TripBookingPassenger extends Model
     {
         return [
             'on_seat' => 'boolean',
+            'status' => 'boolean',
         ];
     }
 

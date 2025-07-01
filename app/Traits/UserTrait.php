@@ -20,12 +20,22 @@ trait UserTrait
 
     public static function getRoles()
     {
-        return Role::with('permissions:id,name')->get();
+        return Role::with('permissions:id,name')->get()->map(function ($role) {
+            $role->has_users = $role->users()->exists();
+
+            return $role;
+        });
     }
 
     public static function getRole(int $id)
     {
-        return Role::with('permissions:id,name')->find($id);
+        $role = Role::with('permissions:id,name')->find($id);
+
+        if ($role) {
+            $role->has_users = $role->users()->exists();
+        }
+
+        return $role;
     }
 
     public static function updateRole(int $id, string $name, string $description, array $permissions)
