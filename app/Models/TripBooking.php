@@ -44,6 +44,11 @@ class TripBooking extends Model
         return $this->hasMany(TripBookingPassenger::class);
     }
 
+    public function tripBookingPassengers()
+    {
+        return $this->hasMany(TripBookingPassenger::class);
+    }
+
     #[Scope]
     protected function scopeCreatedBetween(Builder $query, $from, $to): void
     {
