@@ -31,10 +31,10 @@ trait TransportServiceTrait
         $lastMonthOutboundPassengersCount = $this->getOutboundPassengersCount($states, $lastMonthStart, $lastMonthEnd);
 
         return [
-            'inbound_passengers_count' => $inbound_passengers_count,
-            'outbound_passengers_count' => $outbound_passengers_count,
-            'lastMonthInboundPassengersCount' => $lastMonthInboundPassengersCount,
-            'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengersCount,
+            'inbound_passengers_count' => $inbound_passengers_count ?? 0,
+            'outbound_passengers_count' => $outbound_passengers_count ?? 0,
+            'lastMonthInboundPassengersCount' => $lastMonthInboundPassengersCount ?? 0,
+            'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengersCount ?? 0,
             'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengersCount, $inbound_passengers_count),
             'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengersCount, $outbound_passengers_count),
         ];
