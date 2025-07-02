@@ -193,7 +193,7 @@ class TransportService
                         });
                 });
 
-                $vars = $this->setInboundOutboundData([$states]);
+                $vars = $this->setInboundOutboundData($states);
             })
             ->when(request('state') && ! request('search'), function ($query) use (&$vars) {
 
@@ -219,7 +219,7 @@ class TransportService
                         });
                 });
 
-                $vars = $this->setInboundOutboundData([$search]);
+                $vars = $this->setInboundOutboundData($search);
             })
             ->between(now()->startOfMonth(), now())
             ->selectRaw('id, CONCAT(departure, destination) as route, departure, destination, means, COUNT(*) as trips_count')
