@@ -23,7 +23,6 @@ class WatchlistService
             'userByPhone.tripBookings.trip'  => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity'), 
             'userByEmail.tripBookings.trip'  => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity')
         ])->findOrFail($id);
-        // dd($record);
         return $this->success($record->toResource(), 'Watchlist record fetched successfully');
     }
 }
