@@ -452,7 +452,7 @@ class SettingsService
     {
         $user = AuthUser::findOrFail($request->user_id);
 
-        if (! Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->old_password, $user->password)) {
             return $this->error(null, 'Current password is incorrect', 400);
         }
 
