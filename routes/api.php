@@ -110,6 +110,7 @@ Route::middleware('validate.header')
 
                 // Other APIs
                 Route::get('/states', [GeneralController::class, 'getStates']);
+                Route::get('/zones', [GeneralController::class, 'getZones']);
 
                 // Auth
                 Route::post('/auth/logout', [AuthController::class, 'logout']);

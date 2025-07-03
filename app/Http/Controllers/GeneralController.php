@@ -14,4 +14,9 @@ class GeneralController extends Controller
     {
         return $this->service->getStates();
     }
+
+    public function getZones()
+    {
+        return $this->service->getZones();
+    }
 }
