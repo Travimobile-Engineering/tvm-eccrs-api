@@ -12,7 +12,12 @@ class WatchlistService
 
     public function getWatchlistRecords()
     {
-        $records = WatchList::when(request('search'), fn($q, $search) => $q->where('full_name', 'like', "%$search%"))
+        $records = WatchList::when(request('search'), function($q, $search) {
+            return $q->where('full_name', 'like', "%$search%")
+                ->orWhere('nin', 'like', "%$search%")
+                ->orWhere('phone', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%");
+        })
         ->paginate(15);
         return $this->success(WatchlistResource::collection($records), 'Watchlist records fetched successfully');
     }
