@@ -66,6 +66,7 @@ Route::middleware('validate.header')
                     ->group(function () {
                         Route::get('/all', 'getWatchlistRecords');
                         Route::get('/{id}/detail', 'getWatchlistDetail');
+                        Route::get('/stats', 'watchlistStats');
                     });
 
                 // Settings

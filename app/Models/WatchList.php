@@ -12,9 +12,7 @@ class WatchList extends Model
     protected $connection = 'transport';
 
     public function userByNin(){
-        return $this->belongsTo(User::class, 'nin', 'nin')
-        ->orWhere('phone_number', $this->phone)
-        ->orWhere('email', $this->email);
+        return $this->belongsTo(User::class, 'nin', 'nin');
     }
 
     public function userByPhone(){

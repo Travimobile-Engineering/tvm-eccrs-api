@@ -20,4 +20,9 @@ class WatchlistController extends Controller
     {
         return $this->service->getWatchlistDetail($id);
     }
+
+    public function watchlistStats()
+    {
+        return $this->service->watchlistStats();
+    }
 }
