@@ -52,7 +52,7 @@ class WatchlistService
             ->count();
     
         $previousMonthApprehendedCount = (clone $watchlistsQuery)
-            ->where('status', 'in-custody')
+            ->whereStatus(WatchlistStatus::IN_CUSTODY->value)
             ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->count();
     
