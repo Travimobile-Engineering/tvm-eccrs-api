@@ -42,7 +42,7 @@ class WatchlistService
             });
     
         $totalCount = (clone $watchlistsQuery)->count();
-        $apprehendedCount = (clone $watchlistsQuery)->whereStatus(WatchlistStatus::IN_CUSTODY)->count();
+        $apprehendedCount = (clone $watchlistsQuery)->whereStatus(WatchlistStatus::IN_CUSTODY->value)->count();
     
         $previousMonthStart = now()->subMonth()->startOfMonth();
         $previousMonthEnd = now()->subMonth()->endOfMonth();
