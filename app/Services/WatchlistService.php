@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Enums\WatchlistStatus;
 use App\Models\User;
 use App\Models\WatchList;
 use App\Traits\HttpResponse;
@@ -34,14 +35,14 @@ class WatchlistService
 
     public function watchlistStats()
     {
-        $watchlistsQuery = WatchList::when(request('status'), fn($q, $status) => $q->where('status', $status))
+        $watchlistsQuery = WatchList::when(request('status'), fn($q, $status) => $q->whereStatus(WatchlistStatus::tryFrom($status)))
             ->when(request('month'), function($q, $month) {
                 $curMonth = now()->monthOfYear();
                 return $q->whereBetween('created_at', [now()->subMonths($curMonth - $month)->startOfMonth(), now()->subMonths($curMonth - $month)->endOfMonth()]);
             });
     
         $totalCount = (clone $watchlistsQuery)->count();
-        $apprehendedCount = (clone $watchlistsQuery)->where('status', 'in-custody')->count();
+        $apprehendedCount = (clone $watchlistsQuery)->whereStatus(WatchlistStatus::IN_CUSTODY)->count();
     
         $previousMonthStart = now()->subMonth()->startOfMonth();
         $previousMonthEnd = now()->subMonth()->endOfMonth();
