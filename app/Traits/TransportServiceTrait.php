@@ -13,7 +13,7 @@ trait TransportServiceTrait
             ->between($from ?? now()->startOfMonth(), $to ?? now())
             ->get();
 
-        return (object)[
+        return (object) [
             'total' => $trips->count(),
             'road' => $trips->filter(fn ($trip) => $trip->means === 'road')->count(),
             'air' => null,
@@ -27,8 +27,8 @@ trait TransportServiceTrait
         $trips = Trip::whereHas('departureState', fn ($q) => $q->whereIn('states.name', $states))
             ->between($from ?? now()->startOfMonth(), $to ?? now())
             ->get();
-        
-        return (object)[
+
+        return (object) [
             'total' => $trips->count(),
             'road' => $trips->filter(fn ($trip) => $trip->means === 'road')->count(),
             'air' => null,
@@ -39,10 +39,10 @@ trait TransportServiceTrait
 
     protected function setInboundOutboundData(array $states)
     {
-        if(gettype($states) !== 'array') {
+        if (gettype($states) !== 'array') {
             $states = [$states];
         }
-        
+
         $lastMonthStart = now()->subMonth()->startOfMonth();
         $lastMonthEnd = now()->subMonth()->endOfMonth();
         $inboundData = $this->getInboundPassengers($states);
@@ -50,7 +50,7 @@ trait TransportServiceTrait
         $lastMonthInboundPassengers = $this->getInboundPassengers($states, $lastMonthStart, $lastMonthEnd);
         $lastMonthOutboundPassengers = $this->getOutboundPassengers($states, $lastMonthStart, $lastMonthEnd);
 
-        return (object)[
+        return (object) [
             'inboundData' => $inboundData,
             'outboundData' => $outboundData,
             'lastMonthInboundPassengersCount' => $lastMonthInboundPassengers->total,

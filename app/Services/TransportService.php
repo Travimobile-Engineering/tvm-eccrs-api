@@ -3,16 +3,16 @@
 namespace App\Services;
 
 use App\Enums\Zones;
-use App\Models\Trip;
-use App\Models\State;
-use App\Models\Vehicle;
-use App\Models\TripBooking;
-use App\Traits\HttpResponse;
-use App\Models\TransitCompany;
-use App\Http\Resources\UserResource;
-use App\Traits\TransportServiceTrait;
-use App\Http\Resources\ZoneDataResource;
 use App\Http\Resources\TransportResource;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\ZoneDataResource;
+use App\Models\State;
+use App\Models\TransitCompany;
+use App\Models\Trip;
+use App\Models\TripBooking;
+use App\Models\Vehicle;
+use App\Traits\HttpResponse;
+use App\Traits\TransportServiceTrait;
 
 class TransportService
 {
@@ -206,7 +206,7 @@ class TransportService
                 });
             })
             ->when(request('search'), function ($query, $search) use (&$states) {
-                
+
                 $states = request('search');
                 $query->where(function ($query) use ($search) {
                     $query->whereHas('departureState', function ($query) use ($search) {
@@ -222,7 +222,7 @@ class TransportService
             ->groupBy('route', 'id', 'departure', 'destination', 'means')
             ->orderBy('trips_count', 'desc');
 
-            $vars = $this->setInboundOutboundData($states);
+        $vars = $this->setInboundOutboundData($states);
 
         return $this->withPagination(ZoneDataResource::collection($trips->paginate()),
             'Zone data retrieved successfully',
