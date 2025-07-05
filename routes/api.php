@@ -6,6 +6,7 @@ use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WatchlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('validate.header')
@@ -57,6 +58,15 @@ Route::middleware('validate.header')
                     ->group(function () {
                         Route::get('/', 'getManifests');
                         Route::get('/{id}/detail', 'getManifestDetail');
+                    });
+
+                // Wathclist
+                Route::prefix('watchlist')
+                    ->controller(WatchlistController::class)
+                    ->group(function () {
+                        Route::get('/all', 'getWatchlistRecords');
+                        Route::get('/{id}/detail', 'getWatchlistDetail');
+                        Route::get('/stats', 'watchlistStats');
                     });
 
                 // Settings

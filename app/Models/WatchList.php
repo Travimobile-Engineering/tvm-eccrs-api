@@ -10,4 +10,9 @@ class WatchList extends Model
     use HasFactory;
 
     protected $connection = 'transport';
+
+    public function scopeWhereStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
 }
