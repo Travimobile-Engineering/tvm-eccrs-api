@@ -11,15 +11,19 @@ class WatchList extends Model
 
     protected $connection = 'transport';
 
-    public function userByNin(){
-        return $this->belongsTo(User::class, 'nin', 'nin');
-    }
-
-    public function userByPhone(){
-        return $this->belongsTo(User::class, 'phone', 'phone_number');
-    }
-
-    public function userByEmail(){
-        return $this->belongsTo(User::class, 'email', 'email');
+    public function findUser()
+    {
+        return User::with(['tripBookings.trip' => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity')])
+        ->where(function ($query) {
+            $query->when($this->nin, function ($q) {
+                $q->where('nin', $this->nin);
+            });
+            $query->when($this->phone, function ($q) {
+                $q->orWhere('phone_number', $this->phone);
+            });
+            $query->when($this->email, function ($q) {
+                $q->orWhere('email', $this->email);
+            });
+        })->first();
     }
 }

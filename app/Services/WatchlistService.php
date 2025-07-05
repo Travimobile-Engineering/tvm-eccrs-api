@@ -24,11 +24,10 @@ class WatchlistService
 
     public function getWatchlistDetail($id)
     {
-        $record = WatchList::with([
-            'userByNin.tripBookings.trip' => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity'),
-            'userByPhone.tripBookings.trip' => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity'),
-            'userByEmail.tripBookings.trip' => fn($q) => $q->with('transitCompany', 'departureState', 'departureCity', 'destinationState', 'destinationCity'),
-        ])->findOrFail($id);
+        $record = WatchList::findOrFail($id);
+        $user = $record->findUser();
+        $record->setRelation('user', $user ?? null);
+
         return $this->success($record->toResource(), 'Watchlist record fetched successfully');
     }
 

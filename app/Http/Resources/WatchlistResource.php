@@ -14,7 +14,6 @@ class WatchlistResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $user = $this->userByNin ?? $this->userByPhone ?? $this->userByEmail;
         return [
             'id' => $this->id,
             'full_name' => $this->full_name,
@@ -36,7 +35,7 @@ class WatchlistResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'recent_activities' => [
-                'road_trips' => $user->tripBookings->map(fn($booking) =>[
+                'road_trips' => optional($this->user?->tripBookings)->map(fn($booking) => [
                     'company' => $booking->trip->transitCompany->name,
                     'from' => [
                         'state' => $booking->trip->departureState->name,
@@ -47,7 +46,7 @@ class WatchlistResource extends JsonResource
                         'city' => $booking->trip->destinationCity->name,
                     ],
                     'date' => $booking->created_at,
-                ]),
+                ]) ?? [],
             ],
         ];
     }
