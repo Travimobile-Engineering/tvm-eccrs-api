@@ -92,13 +92,18 @@ class SettingsService
 
     public function getPermissions()
     {
-        $permissions = Permission::select('id', 'name')->get();
+        $permissions = Permission::select('id', 'name', 'group')
+            ->get();
 
         if ($permissions->isEmpty()) {
             return $this->error(null, 'No permissions found', 404);
         }
 
-        return $this->success($permissions, 'Permissions retrieved successfully');
+        $grouped = $permissions->groupBy('group')->map(function ($items) {
+            return $items->pluck('name')->all();
+        });
+
+        return $this->success($grouped->all(), 'Permissions retrieved successfully');
     }
 
     public function createOrganization($request)
