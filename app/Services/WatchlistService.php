@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\WatchList;
 use App\Traits\HttpResponse;
 use App\Http\Resources\WatchlistResource;
@@ -25,7 +26,7 @@ class WatchlistService
     public function getWatchlistDetail($id)
     {
         $record = WatchList::findOrFail($id);
-        $user = $record->findUser();
+        $user = User::fromWatchlist($record)->first();
         $record->setRelation('user', $user ?? null);
 
         return $this->success($record->toResource(), 'Watchlist record fetched successfully');
