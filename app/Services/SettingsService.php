@@ -184,7 +184,13 @@ class SettingsService
 
     public function getProfile($userId)
     {
-        $user = AuthUser::with('roles')->find($userId);
+        $user = AuthUser::with([
+            'roles',
+            'zoneModel',
+            'stateModel',
+            'organization',
+        ])
+            ->find($userId);
 
         if (! $user) {
             return $this->error(null, 'User not found', 404);
