@@ -133,4 +133,9 @@ class SettingsController extends Controller
     {
         return $this->service->changePassword($request);
     }
+
+    public function getSystemLog()
+    {
+        return $this->service->getSystemLog();
+    }
 }

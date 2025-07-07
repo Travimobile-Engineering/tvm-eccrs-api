@@ -106,6 +106,9 @@ Route::middleware('validate.header')
                         Route::get('/profile/{user_id}', 'getProfile');
                         Route::post('/profile/change-phone-number', 'changePhoneNumber');
                         Route::post('/profile/validate-phone-number', 'validatePhoneNumber');
+
+                        // System Log
+                        Route::get('/system-log', 'getSystemLog');
                     });
 
                 // Other APIs
