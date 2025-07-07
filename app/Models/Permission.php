@@ -8,7 +8,7 @@ class Permission extends Model
 {
     protected $connection = 'authuser';
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'group'];
 
-    protected $hidden = ['created_at', 'updated_at', 'pivot'];
+    protected $hidden = ['created_at', 'updated_at', 'pivot', 'group'];
 }
