@@ -4,6 +4,7 @@ use App\Contracts\SMS;
 use App\Dtos\SendCodeData;
 use App\Jobs\ProcessMail;
 use App\Models\Mailing;
+use Illuminate\Support\Facades\DB;
 
 if (! function_exists('calculatePercentageDifference')) {
     function calculatePercentageDifference($value1, $value2)
@@ -112,5 +113,23 @@ if (! function_exists('sendSmS')) {
     function sendSmS($phone, $message)
     {
         return app(SMS::class)->sendSms($phone, $message);
+    }
+}
+
+if (! function_exists('generateUniqueNumber')) {
+    function generateUniqueNumber($table, $column, $length = 10)
+    {
+        $attempts = 0;
+        $maxAttempts = 10;
+
+        do {
+            if ($attempts++ > $maxAttempts) {
+                throw new Exception("Unable to generate unique number after {$maxAttempts} attempts.");
+            }
+
+            $number = str_pad(random_int(0, pow(10, $length) - 1), $length, '0', STR_PAD_LEFT);
+        } while (DB::connection('authuser')->table($table)->where($column, $number)->exists());
+
+        return $number;
     }
 }

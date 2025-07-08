@@ -8,6 +8,9 @@ use App\Mail\ForgotPasswordMail;
 use App\Models\AuthUser;
 use App\Traits\HttpResponse;
 use App\Traits\LoginTrait;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -40,9 +43,13 @@ class AuthService
                 'user' => $user,
             ], $this->additionalData($user));
 
+            event(new Login($user, $user, request()));
+
             return $this->success($response, 'Login successful');
 
         } catch (JWTException $e) {
+            event(new Failed($user, $user, request()));
+
             return $this->error(null, 'An error occurred: '.$e->getMessage(), 500);
         }
     }
@@ -113,11 +120,13 @@ class AuthService
                 return $this->error(null, 'Token missing', 401);
             }
 
+            // event(new Logout($user, $user, request()));
+
             auth('api')->invalidate($token);
 
             return $this->success(null, 'Logged out successfully');
         } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
-            return $this->error(null, 'Failed to log out, token invalid or expired', 500);
+            return $this->error(null, 'Failed to log out, token invalid or expired', 400);
         }
     }
 

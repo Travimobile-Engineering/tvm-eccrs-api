@@ -25,6 +25,16 @@ class ProfileResource extends JsonResource
             'role' => $this->whenLoaded('roles', function () {
                 return $this->roles ? $this->roles()->pluck('name')->first() : null;
             }),
+            'zone' => $this->whenLoaded('zoneModel', function () {
+                return $this->zoneModel ? $this->zoneModel->name : null;
+            }),
+            'state' => $this->whenLoaded('stateModel', function () {
+                return $this->stateModel ? $this->stateModel->name : null;
+            }),
+            'organization' => $this->whenLoaded('organization', function () {
+                return $this->organization ? $this->organization->name : null;
+            }),
+            'status' => $this->status,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
         ];
     }

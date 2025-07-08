@@ -36,6 +36,10 @@ trait LoginTrait
         if ($user->status->isSuspended()) {
             return $this->error(null, 'Account is suspended!', 400);
         }
+
+        if (! $user->login_enabled) {
+            return $this->error(null, 'Account is disabled!', 400);
+        }
     }
 
     protected function additionalData($user): array
