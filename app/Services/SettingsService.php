@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Enums\UserType;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\ProfileResource;
+use App\Http\Resources\SystemLogResource;
 use App\Libraries\Utility;
 use App\Models\AuthUser;
 use App\Models\Organization;
@@ -14,6 +15,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\State;
 use App\Models\Suspension;
+use App\Models\SystemLog;
 use App\Models\User;
 use App\Models\Zone;
 use App\Traits\HttpResponse;
@@ -92,13 +94,18 @@ class SettingsService
 
     public function getPermissions()
     {
-        $permissions = Permission::select('id', 'name')->get();
+        $permissions = Permission::select('id', 'name', 'group')
+            ->get();
 
         if ($permissions->isEmpty()) {
             return $this->error(null, 'No permissions found', 404);
         }
 
-        return $this->success($permissions, 'Permissions retrieved successfully');
+        $grouped = $permissions->groupBy('group')->map(function ($items) {
+            return $items->pluck('name')->all();
+        });
+
+        return $this->success($grouped->all(), 'Permissions retrieved successfully');
     }
 
     public function createOrganization($request)
@@ -177,7 +184,13 @@ class SettingsService
 
     public function getProfile($userId)
     {
-        $user = AuthUser::with('roles')->find($userId);
+        $user = AuthUser::with([
+            'roles',
+            'zoneModel',
+            'stateModel',
+            'organization',
+        ])
+            ->find($userId);
 
         if (! $user) {
             return $this->error(null, 'User not found', 404);
@@ -194,7 +207,6 @@ class SettingsService
             $phone = formatPhoneNumber($request->phone_number);
 
             $user = AuthUser::where('id', $request->user_id)
-                ->where('phone_number', $phone)
                 ->first();
 
             if (! $user) {
@@ -249,8 +261,10 @@ class SettingsService
             $lastName = explode(' ', $name)[1];
             $nin = Utility::encrypt($request->nin, config('security.encoding_key'));
 
+            $uniqueId = generateUniqueNumber('users', 'unique_id', 9);
+
             $user = AuthUser::create([
-                'unique_id' => $request->user_id,
+                'unique_id' => $uniqueId,
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'email' => $request->email,
@@ -264,6 +278,7 @@ class SettingsService
                 'zone_id' => $request->zone_id,
                 'state_id' => $request->state_id,
                 'verification_code' => 0,
+                'login_enabled' => $request->login_enabled,
                 'platform' => Platform::ECCRS->value,
                 'status' => UserStatus::ACTIVE->value,
             ]);
@@ -450,7 +465,7 @@ class SettingsService
     {
         $user = AuthUser::findOrFail($request->user_id);
 
-        if (! Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->old_password, $user->password)) {
             return $this->error(null, 'Current password is incorrect', 400);
         }
 
@@ -459,5 +474,14 @@ class SettingsService
         ]);
 
         return $this->success(null, 'Password changed successfully');
+    }
+
+    public function getSystemLog()
+    {
+        $logs = SystemLog::with('user')
+            ->latest()
+            ->paginate(25);
+
+        return $this->success(SystemLogResource::collection($logs), 'System logs retrieved successfully');
     }
 }

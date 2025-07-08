@@ -68,17 +68,40 @@ class UserService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $tripCountLast = TripBooking::createdBetween($startLastMonth, $endLastMonth)->count();
-        $tripCountThis = TripBooking::createdBetween($startThisMonth, $today)->count();
+        $allBookings = TripBooking::all();
+        $tripCountLast = $allBookings->filter(function ($trip) use ($startLastMonth, $endLastMonth) {
+            return $trip->created_at >= $startLastMonth && $trip->created_at <= $endLastMonth;
+        })->count();
 
-        $agentCountLast = User::agentsBetween($startLastMonth, $endLastMonth)->count();
-        $agentCountThis = User::agentsBetween($startThisMonth, $today)->count();
+        $tripCountThis = $allBookings->filter(function ($trip) use ($startThisMonth, $today) {
+            return $trip->created_at >= $startThisMonth && $trip->created_at <= $today;
+        })->count();
 
-        $driverCountLast = User::driversBetween($startLastMonth, $endLastMonth)->count();
-        $driverCountThis = User::driversBetween($startThisMonth, $today)->count();
+        $allAgents = User::whereNotNull('agent_id')->get();
+        $agentCountLast = $allAgents->filter(function ($agent) use ($startLastMonth, $endLastMonth) {
+            return $agent->created_at >= $startLastMonth && $agent->created_at <= $endLastMonth;
+        })->count();
 
-        $companyCountLast = TransitCompany::signedUpBetween($startLastMonth, $endLastMonth)->count();
-        $companyCountThis = TransitCompany::signedUpBetween($startThisMonth, $today)->count();
+        $agentCountThis = $allAgents->filter(function ($agent) use ($startThisMonth, $today) {
+            return $agent->created_at >= $startThisMonth && $agent->created_at <= $today;
+        })->count();
+
+        $allDrivers = User::whereHas('vehicle')->get();
+        $driverCountLast = $allDrivers->filter(function ($driver) use ($startLastMonth, $endLastMonth) {
+            return $driver->created_at >= $startLastMonth && $driver->created_at <= $endLastMonth;
+        })->count();
+        $driverCountThis = $allDrivers->filter(function ($driver) use ($startThisMonth, $today) {
+            return $driver->created_at >= $startThisMonth && $driver->created_at <= $today;
+        })->count();
+
+        $allTransitCompanies = TransitCompany::all();
+        $companyCountLast = $allTransitCompanies->filter(function ($company) use ($startLastMonth, $endLastMonth) {
+            return $company->created_at >= $startLastMonth && $company->created_at <= $endLastMonth;
+        })->count();
+
+        $companyCountThis = $allTransitCompanies->filter(function ($company) use ($startThisMonth, $today) {
+            return $company->created_at >= $startThisMonth && $company->created_at <= $today;
+        })->count();
 
         $distribution = TransitCompany::countByType();
 
@@ -86,19 +109,19 @@ class UserService
 
         return $this->success([
             'travelers' => [
-                'total' => $tripCountThis,
+                'total' => $allBookings->count(),
                 'percentageDiff' => calculatePercentageDifference($tripCountLast, $tripCountThis),
             ],
             'agents' => [
-                'total' => $agentCountThis,
+                'total' => $allAgents->count(),
                 'percentageDiff' => calculatePercentageDifference($agentCountLast, $agentCountThis),
             ],
             'drivers' => [
-                'total' => $driverCountThis,
+                'total' => $allDrivers->count(),
                 'percentageDiff' => calculatePercentageDifference($driverCountLast, $driverCountThis),
             ],
             'transport_companies' => [
-                'total' => $companyCountThis,
+                'total' => $allTransitCompanies->count(),
                 'percentageDiff' => calculatePercentageDifference($companyCountLast, $companyCountThis),
             ],
             'overview' => [

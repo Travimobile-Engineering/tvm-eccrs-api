@@ -1,16 +1,19 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WatchlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('validate.header')
     ->prefix('eccrs')
     ->group(function () {
-        Route::get('/health-check', fn () => response()->json([], 200));
+        Route::get('/health-check', fn () => response()->json([], 200))
+            ->withoutMiddleware('validate.header');
 
         Route::middleware('validate.auth.header')
             ->prefix('auth')
@@ -56,6 +59,15 @@ Route::middleware('validate.header')
                     ->group(function () {
                         Route::get('/', 'getManifests');
                         Route::get('/{id}/detail', 'getManifestDetail');
+                    });
+
+                // Wathclist
+                Route::prefix('watchlist')
+                    ->controller(WatchlistController::class)
+                    ->group(function () {
+                        Route::get('/all', 'getWatchlistRecords');
+                        Route::get('/{id}/detail', 'getWatchlistDetail');
+                        Route::get('/stats', 'watchlistStats');
                     });
 
                 // Settings
@@ -105,7 +117,14 @@ Route::middleware('validate.header')
                         Route::get('/profile/{user_id}', 'getProfile');
                         Route::post('/profile/change-phone-number', 'changePhoneNumber');
                         Route::post('/profile/validate-phone-number', 'validatePhoneNumber');
+
+                        // System Log
+                        Route::get('/system-log', 'getSystemLog');
                     });
+
+                // Other APIs
+                Route::get('/states', [GeneralController::class, 'getStates']);
+                Route::get('/zones', [GeneralController::class, 'getZones']);
 
                 // Auth
                 Route::post('/auth/logout', [AuthController::class, 'logout']);

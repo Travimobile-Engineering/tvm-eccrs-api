@@ -7,36 +7,56 @@ use Illuminate\Support\Collection;
 
 trait TransportServiceTrait
 {
-    protected function getInboundPassengersCount(array $states, $from = null, $to = null)
+    protected function getInboundPassengers(array $states, $from = null, $to = null)
     {
-        return Trip::whereHas('destinationState', fn ($q) => $q->whereIn('states.name', $states))
+        $trips = Trip::whereHas('destinationState', fn ($q) => $q->whereIn('states.name', $states))
             ->between($from ?? now()->startOfMonth(), $to ?? now())
-            ->count();
+            ->get();
+
+        return (object) [
+            'total' => $trips->count(),
+            'road' => $trips->filter(fn ($trip) => $trip->means === 'road')->count(),
+            'air' => null,
+            'sea' => null,
+            'rail' => null,
+        ];
     }
 
-    protected function getOutboundPassengersCount(array $states, $from = null, $to = null)
+    protected function getOutboundPassengers(array $states, $from = null, $to = null)
     {
-        return Trip::whereHas('departureState', fn ($q) => $q->whereIn('states.name', $states))
+        $trips = Trip::whereHas('departureState', fn ($q) => $q->whereIn('states.name', $states))
             ->between($from ?? now()->startOfMonth(), $to ?? now())
-            ->count();
+            ->get();
+
+        return (object) [
+            'total' => $trips->count(),
+            'road' => $trips->filter(fn ($trip) => $trip->means === 'road')->count(),
+            'air' => null,
+            'sea' => null,
+            'rail' => null,
+        ];
     }
 
     protected function setInboundOutboundData(array $states)
     {
+        if (gettype($states) !== 'array') {
+            $states = [$states];
+        }
+
         $lastMonthStart = now()->subMonth()->startOfMonth();
         $lastMonthEnd = now()->subMonth()->endOfMonth();
-        $inbound_passengers_count = $this->getInboundPassengersCount($states);
-        $outbound_passengers_count = $this->getOutboundPassengersCount($states);
-        $lastMonthInboundPassengersCount = $this->getInboundPassengersCount($states, $lastMonthStart, $lastMonthEnd);
-        $lastMonthOutboundPassengersCount = $this->getOutboundPassengersCount($states, $lastMonthStart, $lastMonthEnd);
+        $inboundData = $this->getInboundPassengers($states);
+        $outboundData = $this->getOutboundPassengers($states);
+        $lastMonthInboundPassengers = $this->getInboundPassengers($states, $lastMonthStart, $lastMonthEnd);
+        $lastMonthOutboundPassengers = $this->getOutboundPassengers($states, $lastMonthStart, $lastMonthEnd);
 
-        return [
-            'inbound_passengers_count' => $inbound_passengers_count,
-            'outbound_passengers_count' => $outbound_passengers_count,
-            'lastMonthInboundPassengersCount' => $lastMonthInboundPassengersCount,
-            'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengersCount,
-            'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengersCount, $inbound_passengers_count),
-            'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengersCount, $outbound_passengers_count),
+        return (object) [
+            'inboundData' => $inboundData,
+            'outboundData' => $outboundData,
+            'lastMonthInboundPassengersCount' => $lastMonthInboundPassengers->total,
+            'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengers->total,
+            'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengers->total, $inboundData->total),
+            'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengers->total, $outboundData->total),
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Enums\Zones;
 use App\Http\Resources\TransportResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\ZoneDataResource;
+use App\Models\State;
 use App\Models\TransitCompany;
 use App\Models\Trip;
 use App\Models\TripBooking;
@@ -135,7 +136,7 @@ class TransportService
 
         return $this->success([
             'passengers' => [
-                'total' => $passengersCountThis,
+                'total' => $this->getTotalBookings($allBookings),
                 'percentageDiff' => calculatePercentageDifference($passengersCountLast, $passengersCountThis),
             ],
             'air' => [
@@ -177,11 +178,10 @@ class TransportService
 
     public function getZoneData($zone)
     {
-        $vars = null;
-
+        $states = State::pluck('name')->toArray();
         $trips = Trip::with('departureState', 'destinationState', 'bookings')
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
-            ->when($zone && ! request('state') && ! request('search'), function ($query) use ($zone, &$vars) {
+            ->when($zone && ! request('state') && ! request('search'), function ($query) use ($zone, &$states) {
 
                 $states = Zones::tryFrom($zone)?->states();
                 $query->where(function ($query) use ($states) {
@@ -192,24 +192,22 @@ class TransportService
                             return $query->whereIn('states.name', $states);
                         });
                 });
-
-                $vars = $this->setInboundOutboundData([$states]);
             })
-            ->when(request('state') && ! request('search'), function ($query) use (&$vars) {
+            ->when(request('state') && ! request('search'), function ($query) use (&$states) {
 
-                $state = request('state');
-                $query->where(function ($query) use ($state) {
-                    $query->whereHas('departureState', function ($query) use ($state) {
-                        return $query->where('states.name', $state);
+                $states = request('state');
+                $query->where(function ($query) use ($states) {
+                    $query->whereHas('departureState', function ($query) use ($states) {
+                        return $query->whereIn('states.name', $states);
                     })
-                        ->orWhereHas('destinationState', function ($query) use ($state) {
-                            return $query->where('states.name', $state);
+                        ->orWhereHas('destinationState', function ($query) use ($states) {
+                            return $query->whereIn('states.name', $states);
                         });
                 });
-
-                $vars = $this->setInboundOutboundData([$state]);
             })
-            ->when(request('search'), function ($query, $search) use (&$vars) {
+            ->when(request('search'), function ($query, $search) use (&$states) {
+
+                $states = request('search');
                 $query->where(function ($query) use ($search) {
                     $query->whereHas('departureState', function ($query) use ($search) {
                         return $query->where('states.name', 'like', "%$search%");
@@ -218,25 +216,33 @@ class TransportService
                             return $query->where('states.name', 'like', "%$search%");
                         });
                 });
-
-                $vars = $this->setInboundOutboundData([$search]);
             })
             ->between(now()->startOfMonth(), now())
             ->selectRaw('id, CONCAT(departure, destination) as route, departure, destination, means, COUNT(*) as trips_count')
             ->groupBy('route', 'id', 'departure', 'destination', 'means')
             ->orderBy('trips_count', 'desc');
 
+        $vars = $this->setInboundOutboundData($states);
+
         return $this->withPagination(ZoneDataResource::collection($trips->paginate()),
             'Zone data retrieved successfully',
             200,
             [
                 'inbound_passengers' => [
-                    'total' => $vars['inbound_passengers_count'],
-                    'percentageDiff' => $vars['inboundPercentageDiff'],
+                    'total' => $vars->inboundData->total,
+                    'road' => $vars->inboundData->road,
+                    'air' => null,
+                    'sea' => null,
+                    'rail' => null,
+                    'percentageDiff' => $vars->inboundPercentageDiff,
                 ],
                 'outbound_passengers' => [
-                    'total' => $vars['outbound_passengers_count'],
-                    'percentageDiff' => $vars['inboundPercentageDiff'],
+                    'total' => $vars->outboundData->total,
+                    'road' => $vars->outboundData->road,
+                    'air' => null,
+                    'sea' => null,
+                    'rail' => null,
+                    'percentageDiff' => $vars->inboundPercentageDiff,
                 ],
                 'most_active_departure_state' => $trips->first()?->departureState->name,
                 'most_active_destination_state' => $trips->first()?->destinationState->name,
