@@ -123,15 +123,15 @@ class User extends Authenticatable
     }
 
     public function scopeFromWatchlist($query, WatchList $watchlist)
-{
-        return $query->with(['tripBookings.trip' => fn($q) => $q->with(
-                'transitCompany', 'departureState', 'departureCity', 
-                'destinationState', 'destinationCity'
-            )])
+    {
+        return $query->with(['tripBookings.trip' => fn ($q) => $q->with(
+            'transitCompany', 'departureState', 'departureCity',
+            'destinationState', 'destinationCity'
+        )])
             ->where(function ($query) use ($watchlist) {
-                $query->when($watchlist->nin, fn($q) => $q->where('nin', $watchlist->nin))
-                    ->when($watchlist->phone, fn($q) => $q->orWhere('phone_number', $watchlist->phone))
-                    ->when($watchlist->email, fn($q) => $q->orWhere('email', $watchlist->email));
+                $query->when($watchlist->nin, fn ($q) => $q->where('nin', $watchlist->nin))
+                    ->when($watchlist->phone, fn ($q) => $q->orWhere('phone_number', $watchlist->phone))
+                    ->when($watchlist->email, fn ($q) => $q->orWhere('email', $watchlist->email));
             });
-}
+    }
 }
