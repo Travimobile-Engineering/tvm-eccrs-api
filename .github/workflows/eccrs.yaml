@@ -1,12 +1,15 @@
-
 name: Build and Push Travi Backend Image to Registry
 
 on:
   push:
     branches: [ master, staging, dev ]
-  
+
 env:
   IMAGE_URI: "820242924853.dkr.ecr.eu-west-2.amazonaws.com/eccrs-service"
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build-image:
@@ -17,15 +20,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: "Export AWS Credentials"
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
+    - name: Install Trivy
+      run: |
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.18.3/trivy_0.18.3_Linux-64bit.deb
+        sudo dpkg -i trivy_0.18.3_Linux-64bit.deb
 
-    - name: 'Authenticate to AWS ECR'
-      run:  aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $IMAGE_URI
+    - name: Export AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::820242924853:role/github_actions_role20250624143236171300000001
+        aws-region: eu-west-2
+
+    - name: Authenticate to AWS ECR
+      run: aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $IMAGE_URI
 
     - name: Extract short commit SHA
       id: vars
@@ -44,9 +51,62 @@ jobs:
 
     - name: Build Docker image
       run: docker build -t $IMAGE_URI:${{ env.tag }} .
-      
-      
+
+    - name: Trivy Image Scan
+      run: trivy image --exit-code 1 --format json --output trivy-results.json $IMAGE_URI:${{ env.tag }}
+
+    - name: Install Python + Requests
+      if: always()
+      run: |
+        python3 -m venv venv
+        . venv/bin/activate
+        pip install --upgrade pip
+        pip install requests
+
+    - name: Determine DefectDojo Engagement ID
+      if: failure()
+      id: ID
+      run: |
+        if [[ $GITHUB_REF == refs/heads/master ]]; then
+          echo ID=5 >> $GITHUB_ENV
+        elif [[ $GITHUB_REF == refs/heads/staging ]]; then
+          echo ID=4 >> $GITHUB_ENV
+        elif [[ $GITHUB_REF == refs/heads/dev ]]; then
+          echo ID=3 >> $GITHUB_ENV
+        fi
+
+    - name: Upload to DefectDojo
+      if: failure()
+      env:
+        DEFECT_DOJO_FILE: trivy-results.json
+        DEFECT_DOJO_ENGAGEMENT: ${{ env.ID }}
+        DEFECT_DOJO_API_TOKEN: ${{ secrets.DEFECT_DOJO_API_TOKEN }}
+        DEFECT_DOJO_SCAN_TYPE: Trivy Scan
+        DEFECT_DOJO_URL: https://defectdojo.travimobile.com/api/v2/import-scan/
+        DEFECT_DOJO_PRODUCT_NAME: TVM-ECCRS
+      run: python upload-scan-report.py
+
     - name: Push Docker image to Artifact Registry
       run: docker push $IMAGE_URI:${{ env.tag }}
 
-
+    - name: Notify Slack
+      if: failure()
+      uses: slackapi/slack-github-action@v2.1.0
+      with:
+        webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+        webhook-type: incoming-webhook
+        payload: |
+          text: "*GitHub Action build result*: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\n*Triggered by*: @${{ github.actor }}\n*Branch*: ${{ 
+              github.event.pull_request.head.ref ||    
+              github.head_ref ||                             
+              github.ref_name                          
+            }}"
+          blocks:
+          - type: "section"
+            text:
+              type: "mrkdwn"
+              text: "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}\n*Triggered by*: @${{ github.actor }}\n*Branch*: ${{ 
+              github.event.pull_request.head.ref ||         
+              github.head_ref ||                             
+              github.ref_name                               
+            }}"
