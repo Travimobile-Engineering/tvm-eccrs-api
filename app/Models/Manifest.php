@@ -4,10 +4,13 @@ namespace App\Models;
 
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
+use App\Traits\ManifestFilter;
 use Illuminate\Database\Eloquent\Model;
 
 class Manifest extends Model
 {
+    use ManifestFilter;
+
     protected $connection = 'transport';
 
     protected static function booted()
@@ -61,14 +64,5 @@ class Manifest extends Model
     public function trip()
     {
         return $this->belongsTo(Trip::class);
-    }
-
-    public function scopeFilterByUserZone($query, $user)
-    {
-        if ($user->role && $user->role !== 'super_admin') {
-            $query->whereHas('trip', function ($q) use ($user) {
-                $q->where('zone_id', $user->zone_id);
-            });
-        }
     }
 }

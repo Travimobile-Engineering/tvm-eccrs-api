@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\ManifestController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
@@ -68,6 +69,14 @@ Route::middleware('validate.header')
                         Route::get('/all', 'getWatchlistRecords');
                         Route::get('/{id}/detail', 'getWatchlistDetail');
                         Route::get('/stats', 'watchlistStats');
+                    });
+
+                // Report
+                Route::prefix('reports')
+                    ->controller(ReportController::class)
+                    ->group(function () {
+                        Route::get('/', 'getReports');
+                        Route::get('/{id}/detail', 'getReportDetail');
                     });
 
                 // Settings
