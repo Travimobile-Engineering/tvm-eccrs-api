@@ -62,4 +62,13 @@ class Manifest extends Model
     {
         return $this->belongsTo(Trip::class);
     }
+
+    public function scopeFilterByUserZone($query, $user)
+    {
+        if ($user->role && $user->role !== 'super_admin') {
+            $query->whereHas('trip', function ($q) use ($user) {
+                $q->where('zone_id', $user->zone_id);
+            });
+        }
+    }
 }
