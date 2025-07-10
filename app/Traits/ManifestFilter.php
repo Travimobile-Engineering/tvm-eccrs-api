@@ -44,7 +44,7 @@ trait ManifestFilter
 
     public function scopeWhereTripState($query, $state)
     {
-        return $query->whereHas('trip', fn ($q) => $q->whereHas('destinationRegion', fn ($region) => $region->where('state_id', $state)
+        return $query->whereHas('trip', fn ($q) => $q->whereHas('destinationCity', fn ($region) => $region->where('state_id', $state)
         )
         );
     }

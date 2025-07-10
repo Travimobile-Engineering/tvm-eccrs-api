@@ -77,7 +77,7 @@ Route::middleware('validate.header')
                     ->group(function () {
                         Route::get('/', 'getReports');
                         Route::post('/export', 'exportReports');
-                        Route::get('/{id}/detail', 'getReportDetail');
+                        Route::get('/manifest/{id}/detail', 'getReportDetail');
                     });
 
                 // Settings

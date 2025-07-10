@@ -16,6 +16,11 @@ class ReportController extends Controller
         return $this->service->getReports($request);
     }
 
+    public function getReportDetail($id)
+    {
+        return $this->service->getReportDetail($id);
+    }
+
     public function exportReports(Request $request)
     {
         $request->validate([
