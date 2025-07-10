@@ -76,6 +76,7 @@ Route::middleware('validate.header')
                     ->controller(ReportController::class)
                     ->group(function () {
                         Route::get('/', 'getReports');
+                        Route::post('/export', 'exportReports');
                         Route::get('/{id}/detail', 'getReportDetail');
                     });
 

@@ -15,17 +15,24 @@ trait ManifestFilter
 
     public function scopeFilterByReport($query, $filters)
     {
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
+        $zone = $filters['zone'] ?? null;
+        $state = $filters['state'] ?? null;
+        $from = $filters['from'] ?? null;
+        $to = $filters['to'] ?? null;
+
         return $query
-            ->when($filters['start_date'] && $filters['end_date'], fn ($q) => $q->whereHas('trip', fn ($trip) => $trip->whereBetween('departure_date', [$filters['start_date'], $filters['end_date']])
+            ->when($startDate && $endDate, fn ($q) => $q->whereHas('trip', fn ($trip) => $trip->whereBetween('departure_date', [$startDate, $endDate])
             )
             )
-            ->when($filters['zone'] && $filters['zone'] !== 'all', fn ($q) => $q->whereTripZone($filters['zone'])
+            ->when($zone && $zone !== 'all', fn ($q) => $q->whereTripZone($zone)
             )
-            ->when($filters['state'] && $filters['state'] !== 'all', fn ($q) => $q->whereTripState($filters['state'])
+            ->when($state && $state !== 'all', fn ($q) => $q->whereTripState($state)
             )
-            ->when($filters['from'], fn ($q) => $q->whereTripFrom($filters['from'])
+            ->when($from, fn ($q) => $q->whereTripFrom($from)
             )
-            ->when($filters['to'], fn ($q) => $q->whereTripTo($filters['to'])
+            ->when($to, fn ($q) => $q->whereTripTo($to)
             );
     }
 

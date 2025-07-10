@@ -15,4 +15,15 @@ class ReportController extends Controller
     {
         return $this->service->getReports($request);
     }
+
+    public function exportReports(Request $request)
+    {
+        $request->validate([
+            'report_type' => ['required', 'string', 'in:manifest,hotel,transport'],
+            'data_type' => ['required', 'string', 'in:hotel,road,air'],
+            'export' => ['required', 'string', 'in:pdf,excel,csv'],
+        ]);
+
+        return $this->service->exportReports($request);
+    }
 }
