@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GeneralController;
+use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
@@ -67,6 +68,14 @@ Route::middleware('validate.header')
                         Route::get('/all', 'getWatchlistRecords');
                         Route::get('/{id}/detail', 'getWatchlistDetail');
                         Route::get('/stats', 'watchlistStats');
+                    });
+                
+                // Incident
+                Route::prefix('incident')
+                    ->controller(IncidentController::class)
+                    ->group(function () {
+                        Route::get('/all', 'getIncidents');
+                        Route::get('/stats', 'getIncidentStats');
                     });
 
                 // Settings

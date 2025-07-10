@@ -137,7 +137,7 @@ class TransportService
         return $this->success([
             'passengers' => [
                 'total' => $this->getTotalBookings($allBookings),
-                'percentageDiff' => calculatePercentageDifference($passengersCountLast, $passengersCountThis),
+                'percentageDiff' => calculatePercentageOf($passengersCountLast, $passengersCountThis),
             ],
             'air' => [
                 'total' => null,
@@ -145,7 +145,7 @@ class TransportService
             ],
             'road' => [
                 'total' => $roadPassengersCountThis,
-                'percentageDiff' => calculatePercentageDifference($roadPassengersCountLast, $roadPassengersCountThis),
+                'percentageDiff' => calculatePercentageOf($roadPassengersCountLast, $roadPassengersCountThis),
             ],
             'train' => [
                 'total' => null,
@@ -195,7 +195,7 @@ class TransportService
             })
             ->when(request('state') && ! request('search'), function ($query) use (&$states) {
 
-                $states = request('state');
+                $states = [request('state')];
                 $query->where(function ($query) use ($states) {
                     $query->whereHas('departureState', function ($query) use ($states) {
                         return $query->whereIn('states.name', $states);
