@@ -62,15 +62,15 @@ class WatchlistService
             [
                 'entries' => [
                     'total' => $totalCount,
-                    'percentDiff' => calculatePercentageDifference(
-                        $totalCount,
+                    'percentDiff' => calculatePercentageOf(
+                        $totalCount, 
                         $previousMonthCount
                     ),
                 ],
                 'apprehended' => [
                     'total' => $apprehendedCount,
-                    'percentDiff' => calculatePercentageDifference(
-                        $apprehendedCount,
+                    'percentDiff' => calculatePercentageOf(
+                        $apprehendedCount, 
                         $previousMonthApprehendedCount
                     ),
                 ],

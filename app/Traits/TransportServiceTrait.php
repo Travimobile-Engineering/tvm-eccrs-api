@@ -55,8 +55,8 @@ trait TransportServiceTrait
             'outboundData' => $outboundData,
             'lastMonthInboundPassengersCount' => $lastMonthInboundPassengers->total,
             'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengers->total,
-            'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengers->total, $inboundData->total),
-            'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengers->total, $outboundData->total),
+            'inboundPercentageDiff' => calculatePercentageOf($lastMonthInboundPassengers->total, $inboundData->total),
+            'outboundPercentageDiff' => calculatePercentageOf($lastMonthOutboundPassengers->total, $outboundData->total),
         ];
     }
 

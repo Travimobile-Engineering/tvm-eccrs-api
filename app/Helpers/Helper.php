@@ -6,16 +6,16 @@ use App\Jobs\ProcessMail;
 use App\Models\Mailing;
 use Illuminate\Support\Facades\DB;
 
-if (! function_exists('calculatePercentageDifference')) {
-    function calculatePercentageDifference($value1, $value2)
+if (! function_exists('calculatePercentageOf')) {
+    function calculatePercentageOf($number, $total)
     {
-        if ($value1 == 0) {
-            return $value2 > 0 ? 100 : 0;
+        if ($number == 0 || $total == 0) {
+            return 0;
         }
 
-        $diff = (($value2 - $value1) / $value1) * 100;
+        $percentage = ($number / $total) * 100;
 
-        return number_format($diff, 2);
+        return number_format($percentage, 2);
     }
 }
 
