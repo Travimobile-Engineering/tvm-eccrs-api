@@ -71,7 +71,7 @@ Route::middleware('validate.header')
                         Route::get('/{id}/detail', 'getWatchlistDetail');
                         Route::get('/stats', 'watchlistStats');
                     });
-                
+
                 // Incident
                 Route::prefix('incident')
                     ->controller(IncidentController::class)
