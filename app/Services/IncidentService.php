@@ -25,7 +25,7 @@ class IncidentService
             $query->whereDate('date', $date);
         })
         ->paginate(25);
-        return $this->withPagination($incidents->toResourceCollection());
+        return $this->withPagination(IncidentResource::collection($incidents), 'Incidents retrieved successfully.');
     }
 
     public function getIncidentStats(){
