@@ -19,7 +19,14 @@ if (! function_exists('calculatePercentageOf')) {
     }
 }
 
-if (function_exists('authUser')) {
+if (! function_exists('userAuth')) {
+    function userAuth()
+    {
+        return auth()->user();
+    }
+}
+
+if (! function_exists('authUser')) {
     function authUser()
     {
         $user = request()->get('auth_user');

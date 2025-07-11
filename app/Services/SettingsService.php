@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Enums\UserType;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\ProfileResource;
+use App\Http\Resources\SystemLogResource;
 use App\Libraries\Utility;
 use App\Models\AuthUser;
 use App\Models\Organization;
@@ -14,6 +15,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\State;
 use App\Models\Suspension;
+use App\Models\SystemLog;
 use App\Models\User;
 use App\Models\Zone;
 use App\Traits\HttpResponse;
@@ -182,7 +184,13 @@ class SettingsService
 
     public function getProfile($userId)
     {
-        $user = AuthUser::with('roles')->find($userId);
+        $user = AuthUser::with([
+            'roles',
+            'zoneModel',
+            'stateModel',
+            'organization',
+        ])
+            ->find($userId);
 
         if (! $user) {
             return $this->error(null, 'User not found', 404);
@@ -466,5 +474,14 @@ class SettingsService
         ]);
 
         return $this->success(null, 'Password changed successfully');
+    }
+
+    public function getSystemLog()
+    {
+        $logs = SystemLog::with('user')
+            ->latest()
+            ->paginate(25);
+
+        return $this->success(SystemLogResource::collection($logs), 'System logs retrieved successfully');
     }
 }

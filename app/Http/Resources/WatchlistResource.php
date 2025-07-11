@@ -35,7 +35,7 @@ class WatchlistResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'recent_activities' => [
-                'road_trips' => optional($this->user?->tripBookings)->map(fn($booking) => [
+                'road_trips' => optional($this->user?->tripBookings)->map(fn ($booking) => [
                     'company' => $booking->trip->transitCompany->name,
                     'from' => [
                         'state' => $booking->trip->departureState->name,

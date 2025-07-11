@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Enums\Enums\WatchlistStatus;
+use App\Http\Resources\WatchlistResource;
 use App\Models\User;
 use App\Models\WatchList;
 use App\Traits\HttpResponse;
-use App\Http\Resources\WatchlistResource;
 
 class WatchlistService
 {
@@ -14,13 +14,14 @@ class WatchlistService
 
     public function getWatchlistRecords()
     {
-        $records = WatchList::when(request('search'), function($q, $search) {
+        $records = WatchList::when(request('search'), function ($q, $search) {
             return $q->where('full_name', 'like', "%$search%")
                 ->orWhere('nin', 'like', "%$search%")
                 ->orWhere('phone', 'like', "%$search%")
                 ->orWhere('email', 'like', "%$search%");
         })
-        ->paginate(15);
+            ->paginate(15);
+
         return $this->success(WatchlistResource::collection($records), 'Watchlist records fetched successfully');
     }
 
@@ -35,27 +36,28 @@ class WatchlistService
 
     public function watchlistStats()
     {
-        $watchlistsQuery = WatchList::when(request('status'), fn($q, $status) => $q->whereStatus(WatchlistStatus::tryFrom($status)))
-            ->when(request('month'), function($q, $month) {
+        $watchlistsQuery = WatchList::when(request('status'), fn ($q, $status) => $q->whereStatus(WatchlistStatus::tryFrom($status)))
+            ->when(request('month'), function ($q, $month) {
                 $curMonth = now()->monthOfYear();
+
                 return $q->whereBetween('created_at', [now()->subMonths($curMonth - $month)->startOfMonth(), now()->subMonths($curMonth - $month)->endOfMonth()]);
             });
-    
+
         $totalCount = (clone $watchlistsQuery)->count();
         $apprehendedCount = (clone $watchlistsQuery)->whereStatus(WatchlistStatus::IN_CUSTODY->value)->count();
-    
+
         $previousMonthStart = now()->subMonth()->startOfMonth();
         $previousMonthEnd = now()->subMonth()->endOfMonth();
-    
+
         $previousMonthCount = (clone $watchlistsQuery)
             ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->count();
-    
+
         $previousMonthApprehendedCount = (clone $watchlistsQuery)
             ->whereStatus(WatchlistStatus::IN_CUSTODY->value)
             ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->count();
-    
+
         $resource = WatchlistResource::collection($watchlistsQuery->paginate(25))->additional(
             [
                 'entries' => [
@@ -73,6 +75,7 @@ class WatchlistService
                     ),
                 ],
             ]);
+
         return $this->success($resource, 'Watchlist statistics fetched successfully');
     }
 }

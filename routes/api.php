@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\ManifestController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\UserController;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('validate.header')
     ->prefix('eccrs')
     ->group(function () {
-        Route::get('/health-check', fn () => response()->json([], 200));
+        Route::get('/health-check', fn () => response()->json([], 200))
+            ->withoutMiddleware('validate.header');
 
         Route::middleware('validate.auth.header')
             ->prefix('auth')
@@ -78,6 +80,15 @@ Route::middleware('validate.header')
                         Route::get('/stats', 'getIncidentStats');
                     });
 
+                // Report
+                Route::prefix('reports')
+                    ->controller(ReportController::class)
+                    ->group(function () {
+                        Route::get('/', 'getReports');
+                        Route::post('/export', 'exportReports');
+                        Route::get('/manifest/{id}/detail', 'getReportDetail');
+                    });
+
                 // Settings
                 Route::prefix('settings')
                     ->controller(SettingsController::class)
@@ -125,6 +136,9 @@ Route::middleware('validate.header')
                         Route::get('/profile/{user_id}', 'getProfile');
                         Route::post('/profile/change-phone-number', 'changePhoneNumber');
                         Route::post('/profile/validate-phone-number', 'validatePhoneNumber');
+
+                        // System Log
+                        Route::get('/system-log', 'getSystemLog');
                     });
 
                 // Other APIs
