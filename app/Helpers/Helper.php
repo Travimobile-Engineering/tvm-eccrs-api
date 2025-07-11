@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 if (! function_exists('calculatePercentageOf')) {
     function calculatePercentageOf($number, $total)
     {
-        if ($number == 0) {
+        if ($number == 0 || $total == 0) {
             return 0;
         }
 

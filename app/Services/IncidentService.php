@@ -29,67 +29,77 @@ class IncidentService
     }
 
     public function getIncidentStats(){
-        $incidents = Incident::all();
+        // Query for last 6 months incident including the current month
+        $query = Incident::where('date', '>=', now()->subMonths(5)->startOfMonth());
+        $allIncidents = Incident::count();
 
         $curMonthStart = now()->startOfMonth();
         $curMonthEnd = now()->endOfMonth();
         $previousMonthStart = now()->subMonth()->startOfMonth();
         $previousMonthEnd = now()->subMonth()->endOfMonth();
 
-        $prevMonthIncidents = $incidents->filter(function ($incident) use ($previousMonthStart, $previousMonthEnd) {
-            return $incident->date >= $previousMonthStart && $incident->date <= $previousMonthEnd;
-        })->count();
+        $prevMonthIncidents = clone($query)->whereBetween('date', [$previousMonthStart, $previousMonthEnd])->count();
+        $curMonthIncidents = clone($query)->whereBetween('date', [$curMonthStart, $curMonthEnd])->count();
 
-        $curMonthIncidents = $incidents->filter(function ($incident) use ($curMonthStart, $curMonthEnd) {
-            return $incident->date >= $curMonthStart && $incident->date <= $curMonthEnd;
-        })->count();
-
-        $incidentsByLocation = $incidents->groupBy('location')->sortByDesc(function ($group) {
-            return $group->count();
-        });
+        $incidentsByLocation = clone($query)
+            ->selectRaw('location, COUNT(*) as count')
+            ->groupBy('location')
+            ->orderByDesc('count')
+            ->get();
+    
+        $totalIncidentsInSixMonths = clone($query)->count();
 
         $months = [];
-        // Get the last 6 months including the current month
-        for ($i = 0; $i <= 5; $i++) {
+        collect([0, 1, 2, 3, 4, 5])
+        ->each(function ($i) use ($query, &$months, $totalIncidentsInSixMonths) 
+        {
             
             $month = now()->subMonths($i);
             $startOfMonth = clone($month)->startOfMonth();
             $endOfMonth = clone($month)->endOfMonth();
 
-            $totalIncidents = $incidents->filter(fn($incident) => $incident->date >= $startOfMonth && $incident->date <= $endOfMonth)->count();
-            $generalSecurityIncidents = $incidents->filter(fn($incident) => $incident->date >= $startOfMonth && $incident->date <= $endOfMonth && $incident->category === IncidentCategory::GeneralSecurityIncident->value)->count();
-            $safetyIncidents = $incidents->filter(fn($incident) => $incident->date >= $startOfMonth && $incident->date <= $endOfMonth && $incident->category === IncidentCategory::SafetyIncidents->value)->count();
-            $transportationViolations = $incidents->filter(fn($incident) => $incident->date >= $startOfMonth && $incident->date <= $endOfMonth && $incident->category === IncidentCategory::TransportationSpecificIncidents->value)->count();
-            $emergencySituations = $incidents->filter(fn($incident) => $incident->date >= $startOfMonth && $incident->date <= $endOfMonth && $incident->category === IncidentCategory::EmergencySituations->value)->count();
-            
+            $incidentsByCategory = $query->selectRaw('category, COUNT(*) as count')
+                ->whereBetween('date', [$startOfMonth, $endOfMonth])
+                ->groupBy('category')
+                ->get();
+
+            $generalSecurityIncidents = $incidentsByCategory->firstWhere('category', IncidentCategory::GeneralSecurityIncident->value)->count ?? 0;
+            $safetyIncidents = $incidentsByCategory->firstWhere('category', IncidentCategory::SafetyIncidents->value)->count ?? 0;
+            $transportationViolations = $incidentsByCategory->firstWhere('category', IncidentCategory::TransportationSpecificIncidents->value)->count ?? 0;
+            $emergencySituations = $incidentsByCategory->firstWhere('category', IncidentCategory::EmergencySituations->value)->count ?? 0;
+
             $months[$month->monthName] = [
-                'total' => $totalIncidents,
+                'total' => $totalIncidentsInSixMonths,
                 'general_security_incident' => [
                     'count' => $generalSecurityIncidents,
-                    'percentage' => calculatePercentageOf($generalSecurityIncidents, $totalIncidents),
+                    'percentage' => calculatePercentageOf($generalSecurityIncidents, $totalIncidentsInSixMonths),
                 ],
                 'safety_incidents' => [
                     'count' => $safetyIncidents,
-                    'percentage' => calculatePercentageOf($safetyIncidents, $totalIncidents),
+                    'percentage' => calculatePercentageOf($safetyIncidents, $totalIncidentsInSixMonths),
                 ],
                 'transportation_voiolation' => [
                     'count' => $transportationViolations,
-                    'percentage' => calculatePercentageOf($transportationViolations, $totalIncidents),
+                    'percentage' => calculatePercentageOf($transportationViolations, $totalIncidentsInSixMonths),
                 ],
                 'emergency_situation' => [
                     'count' => $emergencySituations,
-                    'percentage' => calculatePercentageOf($emergencySituations, $totalIncidents),
+                    'percentage' => calculatePercentageOf($emergencySituations, $totalIncidentsInSixMonths),
                 ],
             ];
-        }
+        });
+
+        $thisMonthIncidents = clone($query)->whereMonth('date', now()->month)->paginate((5));
         
         $data = [
-            'total' => $incidents->count(),
+            'total' => $allIncidents,
             'percentage' => calculatePercentageOf($curMonthIncidents, $prevMonthIncidents),
             'most_common_location' => [
-                'name' => array_key_first($incidentsByLocation->toArray()),
-                'percentage' => calculatePercentageOf($incidentsByLocation->first()->count(), $incidents->count()),],
+                'name' => $incidentsByLocation->first()->location ?? 'N/A',
+                'percentage' => calculatePercentageOf($incidentsByLocation->first()->count, $allIncidents),
+            ],
             'monthly_stats' => $months,
+            'current_month_incidents' => IncidentResource::collection($thisMonthIncidents),,
         ];
 
         return $this->success($data, 'Incident statistics retrieved successfully.');
