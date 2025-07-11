@@ -110,19 +110,19 @@ class UserService
         return $this->success([
             'travelers' => [
                 'total' => $allBookings->count(),
-                'percentageDiff' => calculatePercentageDifference($tripCountLast, $tripCountThis),
+                'percentageDiff' => calculatePercentageOf($tripCountLast, $tripCountThis),
             ],
             'agents' => [
                 'total' => $allAgents->count(),
-                'percentageDiff' => calculatePercentageDifference($agentCountLast, $agentCountThis),
+                'percentageDiff' => calculatePercentageOf($agentCountLast, $agentCountThis),
             ],
             'drivers' => [
                 'total' => $allDrivers->count(),
-                'percentageDiff' => calculatePercentageDifference($driverCountLast, $driverCountThis),
+                'percentageDiff' => calculatePercentageOf($driverCountLast, $driverCountThis),
             ],
             'transport_companies' => [
                 'total' => $allTransitCompanies->count(),
-                'percentageDiff' => calculatePercentageDifference($companyCountLast, $companyCountThis),
+                'percentageDiff' => calculatePercentageOf($companyCountLast, $companyCountThis),
             ],
             'overview' => [
                 'total' => $totalThisMonth,

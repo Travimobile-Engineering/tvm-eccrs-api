@@ -11,6 +11,8 @@ class ManifestService
 
     public function getManifests()
     {
+        $user = userAuth();
+
         $type = request()->query('type');
         $month = request()->query('month');
 
@@ -37,14 +39,16 @@ class ManifestService
                 'vehicle' => fn ($q) => $q->with('brand', 'driver.documents'),
                 'bookings' => fn ($q) => $q->withCount('tripBookingPassengers')->with('user'),
             ]),
-        ])->when($month, function ($q, $month) {
-            $q->whereHas('trip', fn ($q) => $q
-                ->whereMonth('departure_date', $month)
-                ->whereYear('departure_date', now()->year)
-            );
-        });
+        ])
+            ->when($month, function ($q, $month) {
+                $q->whereHas('trip', fn ($q) => $q
+                    ->whereMonth('departure_date', $month)
+                    ->whereYear('departure_date', now()->year)
+                );
+            })
+            ->filterByUserZone($user);
 
-        $manifests = $query->paginate(25);
+        $manifests = $query->latest()->paginate(25);
 
         $manifestOverview = $manifests->getCollection()->map(function ($manifest) use ($type) {
             $passengerCount = $manifest->trip?->bookings->sum('trip_booking_passengers_count') ?? 0;
@@ -72,6 +76,8 @@ class ManifestService
                 ->whereYear('departure_date', now()->year)
             )
             )
+            ->filterByUserZone($user)
+            ->latest()
             ->get();
 
         $summary = collect(['air', 'road', 'train', 'sea', 'hotel'])->mapWithKeys(function ($type) use ($allRoadManifests) {
@@ -100,6 +106,8 @@ class ManifestService
 
     public function getManifestDetail($id)
     {
+        $user = userAuth();
+
         $manifest = Manifest::with([
             'trip' => fn ($q) => $q->with([
                 'departureCity.state',
@@ -108,7 +116,9 @@ class ManifestService
                 'bookings.user',
                 'bookings.tripBookingPassengers',
             ]),
-        ])->findOrFail($id);
+        ])
+            ->filterByUserZone($user)
+            ->findOrFail($id);
 
         return $this->success($manifest->toResource(), 'Manifest retrieved successfully');
     }

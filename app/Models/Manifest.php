@@ -4,10 +4,13 @@ namespace App\Models;
 
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
+use App\Traits\ManifestFilter;
 use Illuminate\Database\Eloquent\Model;
 
 class Manifest extends Model
 {
+    use ManifestFilter;
+
     protected $connection = 'transport';
 
     protected static function booted()

@@ -4,12 +4,13 @@ namespace App\Models;
 
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
+use App\Traits\TripFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Trip extends Model
 {
-    use HasFactory;
+    use HasFactory, TripFilter;
 
     protected $connection = 'transport';
 
@@ -118,10 +119,5 @@ class Trip extends Model
     public function destinationState()
     {
         return $this->hasOneThrough(State::class, RouteSubregion::class, 'id', 'id', 'destination', 'state_id');
-    }
-
-    public function scopeBetween($query, $from, $to)
-    {
-        $query->whereBetween('created_at', [$from, $to]);
     }
 }
