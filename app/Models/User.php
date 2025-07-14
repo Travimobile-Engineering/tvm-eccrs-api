@@ -22,6 +22,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $connection = 'transport';
+    protected static $zoneId = null;
 
     protected $fillable = [
         'uuid',
@@ -123,7 +124,7 @@ class User extends Authenticatable
     }
 
     public function scopeFromWatchlist($query, WatchList $watchlist)
-{
+    {
         return $query->with(['tripBookings.trip' => fn($q) => $q->with(
                 'transitCompany', 'departureState', 'departureCity', 
                 'destinationState', 'destinationCity'
@@ -133,5 +134,27 @@ class User extends Authenticatable
                     ->when($watchlist->phone, fn($q) => $q->orWhere('phone_number', $watchlist->phone))
                     ->when($watchlist->email, fn($q) => $q->orWhere('email', $watchlist->email));
             });
-}
+    }
+
+    public function scopeFromZone(Builder $query, $zoneId){
+        $query->where('zone_id', $zoneId);
+    }
+
+    public function scopeIsDriver(Builder $query){
+        $query->whereHas('vehicle');
+    }
+
+    public function setZoneId($zoneId)
+    {
+        self::$zoneId = $zoneId;
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope('zone', function(Builder $builder){
+            if(!empty(self::$zone)){
+                $builder->where('zone_id', self::$zoneId);
+            }
+        });
+    }
 }

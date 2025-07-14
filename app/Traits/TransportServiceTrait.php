@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 use App\Models\Trip;
+use App\Models\TripBooking;
+use App\Models\TransitCompany;
 use Illuminate\Support\Collection;
 
 trait TransportServiceTrait
@@ -78,5 +80,22 @@ trait TransportServiceTrait
     protected function getTotalCancelledBookings(Collection $bookings): int
     {
         return $bookings->flatMap->travellingWith->filter(fn ($b) => $b->status === 0)->count();
+    }
+
+    protected function sortColumn($sort){
+        return explode(',', $sort)[0] ?? 'created_at';
+    }
+
+    protected function sortOrder($sort){
+        return explode(',', $sort)[1] ?? 'desc';
+    }
+
+    public function setZoneId($zoneId)
+    {
+        if(! empty(request()->header('zone_id'))) {
+            Trip::setZoneId($zoneId);
+            TripBooking::setZoneId($zoneId);
+            TransitCompany::setZoneId($zoneId);
+        }
     }
 }

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\Zones;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Trip extends Model
 {
     use HasFactory;
 
     protected $connection = 'transport';
+    protected static $zoneId = null;
 
     protected $fillable = [
         'user_id',
@@ -73,5 +75,30 @@ class Trip extends Model
     public function scopeBetween($query, $from, $to)
     {
         $query->whereBetween('created_at', [$from, $to]);
+    }
+
+    public function setZoneId($zoneId)
+    {
+        self::$zoneId = $zoneId;
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope('zone', function ($builder) {
+            if (!empty(self::$zoneId)) {
+                
+                $zone = Zone::find(self::$zoneId)->name;
+                $states = Zones::tryFrom($zone)?->states();
+                
+                $builder->where(function ($query) use ($states) {
+                    $query->whereHas('departureState', function ($query) use ($states) {
+                        return $query->whereIn('states.name', $states);
+                    })
+                    ->orWhereHas('destinationState', function ($query) use ($states) {
+                        return $query->whereIn('states.name', $states);
+                    });
+                });
+            }
+        });
     }
 }

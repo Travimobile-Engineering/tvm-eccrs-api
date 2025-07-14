@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Zones;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ class TransitCompany extends Model
     use HasFactory;
 
     protected $connection = 'transport';
+    protected static $zoneId = null;
 
     protected $fillable = [
         'user_id',
@@ -64,5 +66,27 @@ class TransitCompany extends Model
             ->groupBy('type')
             ->pluck('total', 'type')
             ->toArray();
+    }
+
+    public function setZoneId($zoneId)
+    {
+        self::$zoneId = $zoneId;
+    }
+
+    public function scopeFromZone(Builder $query, $zoneId){
+        $zone = Zone::find($zoneId);
+        $states = Zones::tryFrom($zone->name)?->states();
+        $query->whereIn('state', $states);
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope('zone', function(Builder $builder){
+            if(!empty(self::$zoneId)){
+                $zone = Zone::find(self::$zoneId);
+                $states = Zones::tryFrom($zone->name)?->states();
+                $builder->whereIn('state', $states);
+            }
+        });
     }
 }

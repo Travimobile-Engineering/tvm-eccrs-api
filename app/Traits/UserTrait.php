@@ -3,6 +3,9 @@
 namespace App\Traits;
 
 use App\Models\Role;
+use App\Models\User;
+use App\Models\TripBooking;
+use App\Models\TransitCompany;
 
 trait UserTrait
 {
@@ -67,5 +70,22 @@ trait UserTrait
         $role->delete();
 
         return true;
+    }
+
+    protected function setZoneId($zoneId)
+    {
+        if(! empty(request()->header('zone_id'))){
+            User::setZoneId($zoneId);
+            TripBooking::setZoneId($zoneId);
+            TransitCompany::setZoneId($zoneId);
+        }
+    }
+
+    protected function sortColumn($sort){
+        return explode(',', $sort)[0] ?? 'created_at';
+    }
+
+    protected function sortOrder($sort){
+        return explode(',', $sort)[1] ?? 'desc';
     }
 }
