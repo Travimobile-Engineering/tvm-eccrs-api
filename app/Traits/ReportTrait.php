@@ -226,7 +226,12 @@ trait ReportTrait
             ];
         }
 
-        $summary = collect($reportData)
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 15);
+
+        $paginatedData = collect($reportData)->forPage($page, $perPage);
+
+        $summary = collect($paginatedData)
             ->groupBy(fn ($item) => $item['route'].'-'.$item['mode_of_transport'])
             ->map(function ($group) {
                 return [
@@ -245,12 +250,9 @@ trait ReportTrait
                 ];
             })->values();
 
-        $page = $request->get('page', 1);
-        $perPage = $request->get('per_page', 15);
-        $total = $summary->count();
-
+        $total = collect($reportData)->count();
         $paginated = new LengthAwarePaginator(
-            $summary->forPage($page, $perPage),
+            $summary,
             $total,
             $perPage,
             $page,
