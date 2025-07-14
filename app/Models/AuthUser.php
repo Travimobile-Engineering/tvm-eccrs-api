@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Actions\SystemLogAction;
+use App\Dtos\SystemLogData;
 use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -98,6 +100,54 @@ class AuthUser extends Authenticatable implements JWTSubject
         // static::bootDeletesUserRelationships();
     }
 
+    protected static function booted()
+    {
+        static::created(function ($model) {
+            $dto = new SystemLogData(
+                'Created new resource',
+                $model,
+                $model->id,
+                'created',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::updated(function ($model) {
+            $dto = new SystemLogData(
+                'Updated resource',
+                $model,
+                $model->id,
+                'updated',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::deleted(function ($model) {
+            $dto = new SystemLogData(
+                'Deleted resource',
+                $model,
+                $model->id,
+                'deleted',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -153,6 +203,11 @@ class AuthUser extends Authenticatable implements JWTSubject
     public function suspensions()
     {
         return $this->hasMany(Suspension::class, 'user_id');
+    }
+
+    public function systemLogs()
+    {
+        return $this->hasMany(SystemLog::class, 'user_id');
     }
 
     public function latestSuspension()

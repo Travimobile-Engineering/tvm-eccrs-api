@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\Zones;
+use App\Actions\SystemLogAction;
+use App\Dtos\SystemLogData;
+use App\Traits\TripFilter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Trip extends Model
 {
-    use HasFactory;
+    use HasFactory, TripFilter;
 
     protected $connection = 'transport';
     protected static $zoneId = null;
@@ -24,6 +27,71 @@ class Trip extends Model
         'bus_type',
         'bus_stops',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($model) {
+            $dto = new SystemLogData(
+                'Created new resource',
+                $model,
+                $model->id,
+                'created',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::updated(function ($model) {
+            $dto = new SystemLogData(
+                'Updated resource',
+                $model,
+                $model->id,
+                'updated',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::deleted(function ($model) {
+            $dto = new SystemLogData(
+                'Deleted resource',
+                $model,
+                $model->id,
+                'deleted',
+                request()->ip(),
+                null,
+                $model->getAttributes(),
+                request()->fullUrl()
+            );
+
+            app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::addGlobalScope('zone', function ($builder) {
+            if (!empty(self::$zoneId)) {
+                
+                $zone = Zone::find(self::$zoneId)->name;
+                $states = Zones::tryFrom($zone)?->states();
+                
+                $builder->where(function ($query) use ($states) {
+                    $query->whereHas('departureState', function ($query) use ($states) {
+                        return $query->whereIn('states.name', $states);
+                    })
+                    ->orWhereHas('destinationState', function ($query) use ($states) {
+                        return $query->whereIn('states.name', $states);
+                    });
+                });
+            }
+        });
+    }
 
     public function casts(): array
     {
@@ -80,25 +148,5 @@ class Trip extends Model
     public function setZoneId($zoneId)
     {
         self::$zoneId = $zoneId;
-    }
-
-    public static function booted()
-    {
-        static::addGlobalScope('zone', function ($builder) {
-            if (!empty(self::$zoneId)) {
-                
-                $zone = Zone::find(self::$zoneId)->name;
-                $states = Zones::tryFrom($zone)?->states();
-                
-                $builder->where(function ($query) use ($states) {
-                    $query->whereHas('departureState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    })
-                    ->orWhereHas('destinationState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    });
-                });
-            }
-        });
     }
 }

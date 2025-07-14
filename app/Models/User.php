@@ -130,9 +130,9 @@ class User extends Authenticatable
                 'destinationState', 'destinationCity'
             )])
             ->where(function ($query) use ($watchlist) {
-                $query->when($watchlist->nin, fn($q) => $q->where('nin', $watchlist->nin))
-                    ->when($watchlist->phone, fn($q) => $q->orWhere('phone_number', $watchlist->phone))
-                    ->when($watchlist->email, fn($q) => $q->orWhere('email', $watchlist->email));
+                $query->when($watchlist->nin, fn ($q) => $q->where('nin', $watchlist->nin))
+                    ->when($watchlist->phone, fn ($q) => $q->orWhere('phone_number', $watchlist->phone))
+                    ->when($watchlist->email, fn ($q) => $q->orWhere('email', $watchlist->email));
             });
     }
 
