@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum IncidentCategory :string
+enum IncidentCategory: string
 {
     case GeneralSecurityIncident = 'General Security Incident';
     case SafetyIncidents = 'Safety Incidents';

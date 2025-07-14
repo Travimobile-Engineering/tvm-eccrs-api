@@ -2,7 +2,6 @@
 
 namespace App\Traits;
 
-use App\Exports\ManifestReportExport;
 use App\Models\Manifest;
 use App\Models\Trip;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -21,7 +20,7 @@ trait ReportTrait
             ->filterByUserZone($user)
             ->filterByReport($request->only(['start_date', 'end_date', 'zone', 'state', 'from', 'to']));
 
-        $manifests = $query->latest()->limit(5000)->get();
+        $manifests = $query->latest()->get();
 
         return $manifests->map(function ($manifest) use ($dataType) {
             $passengerCount = $manifest->trip?->bookings->sum('trip_booking_passengers_count') ?? 0;
@@ -40,24 +39,91 @@ trait ReportTrait
         });
     }
 
-    // Export Manifest Report to PDF / Excel / CSV
-    public function exportReports($request)
+    // Export Transport Report
+    public function exportTransportReport($user, $request)
     {
-        $user = userAuth();
-        $dataType = $request->post('data_type', 'road');
-        $exportType = $request->post('export', 'csv');
+        $dataType = $request->get('data_type', 'all');
 
-        $data = match ($request->report_type) {
-            'manifest' => $this->exportManifestReport($user, $request, $dataType),
-            default => $this->error(null, 'Report type not found', 404),
-        };
+        $trips = Trip::with([
+            'departureCity',
+            'destinationCity',
+            'vehicle',
+            'bookings',
+            'bookings.tripBookingPassengers',
+        ])
+            ->filterByUserZone($user)
+            ->filterByReport($request->only(['start_date', 'end_date', 'zone', 'state', 'from', 'to']))
+            ->get();
 
-        return match ($exportType) {
-            'pdf' => $this->exportManifestReportToPdf($data),
-            'excel' => $this->exportManifestReportToExcel($data),
-            'csv' => $this->exportManifestReportToCsv($data),
-            default => $this->error(null, 'Export type not found', 404),
-        };
+        $reportData = [];
+
+        foreach ($trips as $trip) {
+            $route = "{$trip->departureCity->name} - {$trip->destinationCity->name}";
+            $tripMode = 'road';
+
+            if ($dataType !== 'all' && $tripMode !== $dataType) {
+                continue;
+            }
+
+            $passengers = $trip->bookings->pluck('tripBookingPassengers')->flatten()->count();
+            $totalBookings = $trip->bookings->count();
+            $totalCheckIns = $trip->bookings
+                ->pluck('tripBookingPassengers')
+                ->flatten()
+                ->where('on_seat', true)
+                ->count();
+
+            $occupancyRate = $passengers ? round(($totalCheckIns / $passengers) * 100, 2).'%' : '0%';
+
+            $boundData = $this->getInOutBoundPassengers($request, $trip, $passengers);
+
+            $reportData[] = [
+                'route' => $route,
+                'mode_of_transport' => $tripMode,
+                'passengers' => $passengers,
+                'trips' => 1,
+                'bookings_vs_checkins' => "{$totalBookings} / {$totalCheckIns}",
+                'occupancy_rate' => $occupancyRate,
+                'bound_data' => [
+                    'road' => [
+                        'inbound' => $boundData['inbound'],
+                        'outbound' => $boundData['outbound'],
+                    ],
+                    'air' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                    'sea' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                    'train' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                ],
+            ];
+        }
+
+        return collect($reportData)
+            ->groupBy(fn ($item) => $item['route'].'-'.$item['mode_of_transport'])
+            ->map(function ($group) {
+                return [
+                    'route' => $group->first()['route'],
+                    'mode_of_transport' => $group->first()['mode_of_transport'],
+                    'passengers' => $group->sum('passengers'),
+                    'trips' => $group->sum('trips'),
+                    'bookings_vs_checkins' => $group->reduce(function ($carry, $item) {
+                        [$b1, $c1] = explode(' / ', $carry);
+                        [$b2, $c2] = explode(' / ', $item['bookings_vs_checkins']);
+
+                        return (intval($b1) + intval($b2)).' / '.(intval($c1) + intval($c2));
+                    }, '0 / 0'),
+                    'occupancy_rate' => $group->first()['occupancy_rate'],
+                    'bound_data' => $group->first()['bound_data'],
+                ];
+            })->values();
+
     }
 
     // Get Hotel Report
@@ -114,7 +180,11 @@ trait ReportTrait
 
         foreach ($trips as $trip) {
             $route = "{$trip->departureCity->name} - {$trip->destinationCity->name}";
-            $modeOfTransport = $request->get('data_type', 'road');
+            $modeOfTransport = 'road';
+
+            if ($request->get('data_type', 'road') !== 'all' && $modeOfTransport !== $request->get('data_type', 'road')) {
+                continue;
+            }
 
             $passengers = $trip->bookings->pluck('tripBookingPassengers')->flatten()->count();
             $totalBookings = $trip->bookings->count();
@@ -126,6 +196,8 @@ trait ReportTrait
 
             $occupancyRate = $passengers ? round(($totalCheckIns / $passengers) * 100, 2).'%' : '0%';
 
+            $boundData = $this->getInOutBoundPassengers($request, $trip, $passengers);
+
             $reportData[] = [
                 'route' => $route,
                 'mode_of_transport' => $modeOfTransport,
@@ -133,10 +205,33 @@ trait ReportTrait
                 'trips' => $trips->count(),
                 'bookings_vs_checkins' => "{$totalBookings} / {$totalCheckIns}",
                 'occupancy_rate' => $occupancyRate,
+                'bound_data' => [
+                    'road' => [
+                        'inbound' => $boundData['inbound'],
+                        'outbound' => $boundData['outbound'],
+                    ],
+                    'air' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                    'sea' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                    'train' => [
+                        'inbound' => 0,
+                        'outbound' => 0,
+                    ],
+                ],
             ];
         }
 
-        $summary = collect($reportData)
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 15);
+
+        $paginatedData = collect($reportData)->forPage($page, $perPage);
+
+        $summary = collect($paginatedData)
             ->groupBy(fn ($item) => $item['route'].'-'.$item['mode_of_transport'])
             ->map(function ($group) {
                 return [
@@ -151,15 +246,13 @@ trait ReportTrait
                         return (intval($b1) + intval($b2)).' / '.(intval($c1) + intval($c2));
                     }, '0 / 0'),
                     'occupancy_rate' => $group->first()['occupancy_rate'],
+                    'bound_data' => $group->first()['bound_data'],
                 ];
             })->values();
 
-        $page = $request->get('page', 1);
-        $perPage = $request->get('per_page', 15);
-        $total = $summary->count();
-
+        $total = collect($reportData)->count();
         $paginated = new LengthAwarePaginator(
-            $summary->forPage($page, $perPage),
+            $summary,
             $total,
             $perPage,
             $page,
@@ -169,20 +262,50 @@ trait ReportTrait
         return $this->withPagination($paginated, 'Transport report retrieved successfully');
     }
 
-    private function exportManifestReportToPdf($data)
+    private function exportToPdf($view, $data, $fileName)
     {
-        $pdf = Pdf::loadView('exports.manifest_report', ['data' => $data]);
+        $pdf = Pdf::loadView($view, ['data' => $data]);
 
-        return $pdf->download('manifest_report.pdf');
+        return $pdf->download($fileName.'.pdf');
     }
 
-    private function exportManifestReportToExcel($data)
+    private function exportToExcel($exportFile, $fileName)
     {
-        return Excel::download(new ManifestReportExport($data), 'manifest_report.xlsx');
+        return Excel::download($exportFile, $fileName.'.xlsx');
     }
 
-    private function exportManifestReportToCsv($data)
+    private function exportToCsv($exportFile, $fileName)
     {
-        return Excel::download(new ManifestReportExport($data), 'manifest_report.csv', ExcelFormat::CSV);
+        return Excel::download($exportFile, $fileName.'.csv', ExcelFormat::CSV);
+    }
+
+    private function getInOutBoundPassengers($request, $trip, $passengers)
+    {
+        $inbound = 0;
+        $outbound = 0;
+
+        if ($request->get('state')) {
+            if (optional($trip->destinationCity->state)->id == $request->get('state')) {
+                $inbound = $passengers;
+            }
+            if (optional($trip->departureCity->state)->id == $request->get('state')) {
+                $outbound = $passengers;
+            }
+        } elseif ($request->get('zone')) {
+            if (optional($trip->destinationCity->state->zone)->id == $request->get('zone')) {
+                $inbound = $passengers;
+            }
+            if (optional($trip->departureCity->state->zone)->id == $request->get('zone')) {
+                $outbound = $passengers;
+            }
+        } else {
+            $inbound = $passengers;
+            $outbound = $passengers;
+        }
+
+        return [
+            'inbound' => $inbound,
+            'outbound' => $outbound,
+        ];
     }
 }
