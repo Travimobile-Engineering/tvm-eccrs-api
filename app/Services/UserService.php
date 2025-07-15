@@ -20,11 +20,12 @@ class UserService
 
     public function __construct(
         protected UserActionService $actionService,
-    ) {}
+    ) {
+        $this->setZoneId();
+    }
 
     public function getTravellers()
     {
-        $this->setZoneId();
         $travellers = User::whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -47,7 +48,6 @@ class UserService
 
     public function getAgents()
     {
-        $this->setZoneId();
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -58,7 +58,6 @@ class UserService
 
     public function getDrivers()
     {
-        $this->setZoneId();
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
@@ -71,8 +70,6 @@ class UserService
 
     public function stats()
     {
-        $this->setZoneId();
-        
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
         $startThisMonth = now()->startOfMonth();
