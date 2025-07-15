@@ -97,9 +97,9 @@ trait TransportServiceTrait
 
     public function setZoneId($zoneId)
     {
-        if(! empty(request()->header('zone_id'))) {
+        if(! empty(request('zone_id'))) {
             if(gettype($zoneId) === 'integer'){
-                app('tempStore')->store('zoneId', request()->header('zone_id'));
+                app('tempStore')->store('zoneId', request('zone_id'));
             }
         }
     }

@@ -21,7 +21,7 @@ class TransportService
 
     public function getCompanies()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
             ->sortBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
@@ -39,7 +39,7 @@ class TransportService
 
     public function getDrivers($company_id)
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
@@ -70,7 +70,7 @@ class TransportService
 
     public function getTrips($id, $status = null)
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $trips = Trip::with([
             'transitCompany',
             'manifest',
@@ -98,7 +98,7 @@ class TransportService
 
     public function getStats()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
 
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
@@ -200,7 +200,7 @@ class TransportService
 
     public function getZoneData($zone)
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
 
         $states = State::pluck('name')->toArray();
         $trips = Trip::with('departureState', 'destinationState', 'bookings')

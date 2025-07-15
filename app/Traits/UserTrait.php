@@ -73,10 +73,10 @@ trait UserTrait
         return true;
     }
 
-    protected function setZoneId($zoneId)
+    protected function setZoneId()
     {
-        if(! empty(request()->header('zone_id'))){
-            app('tempStore')->store('zoneId', request()->header('zone_id'));
+        if(! empty(request('zone_id'))){
+            app('tempStore')->store('zoneId', request('zone_id'));
         }
     }
 

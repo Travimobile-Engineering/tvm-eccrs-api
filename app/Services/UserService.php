@@ -24,7 +24,7 @@ class UserService
 
     public function getTravellers()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $travellers = User::whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -47,7 +47,7 @@ class UserService
 
     public function getAgents()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -58,7 +58,7 @@ class UserService
 
     public function getDrivers()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
@@ -71,7 +71,7 @@ class UserService
 
     public function stats()
     {
-        $this->setZoneId(request()->header('zone_id'));
+        $this->setZoneId();
         
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
@@ -163,8 +163,8 @@ class UserService
     {
 
         $zone = request()->filled('zone') ? request()->input('zone') : null;
-        if(!empty(request()->header('zone_id'))){
-            $zone = Zone::find(request()->header('zone_id'))->name;
+        if(!empty(request('zone_id'))){
+            $zone = Zone::find(request('zone_id'))->name;
         }
 
         if ($zone) {
