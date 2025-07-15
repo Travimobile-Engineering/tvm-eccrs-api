@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\Zones;
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
 use App\Traits\TripFilter;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Trip extends Model
 {
@@ -72,6 +73,27 @@ class Trip extends Model
 
             app(SystemLogAction::class)->execute($dto);
         });
+
+        static::addGlobalScope('zone', function ($builder) {
+            if (app('tempStore')->has('zoneId')) {
+                
+                $zone = Zone::find(app('tempStore')->has('zoneId'));
+                if($zone){
+                    $states = Zones::tryFrom($zone->name)?->states();
+                    if($states){
+                        $builder->where(function ($query) use ($states) {
+                            $query->whereHas('departureState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            })
+                            ->orWhereHas('destinationState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            });
+                        });
+                    }
+                }
+                
+            }
+        });
     }
 
     public function casts(): array
@@ -119,5 +141,10 @@ class Trip extends Model
     public function destinationState()
     {
         return $this->hasOneThrough(State::class, RouteSubregion::class, 'id', 'id', 'destination', 'state_id');
+    }
+
+    public function scopeBetween($query, $from, $to)
+    {
+        $query->whereBetween('created_at', [$from, $to]);
     }
 }

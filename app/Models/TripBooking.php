@@ -68,6 +68,14 @@ class TripBooking extends Model
 
             app(SystemLogAction::class)->execute($dto);
         });
+
+        static::addGlobalScope('zone', function(Builder $builder){
+            if(app('tempStore')->has('zoneId')){
+                $builder->whereHas('trip', function($q){
+                    $q->where('zone_id', app('tempStore')->get('zoneId'));
+                });
+            }
+        });
     }
 
     public function casts()

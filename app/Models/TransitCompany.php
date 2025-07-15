@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Zones;
+use App\Services\TempStorage;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,5 +66,20 @@ class TransitCompany extends Model
             ->groupBy('type')
             ->pluck('total', 'type')
             ->toArray();
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope('zone', function(Builder $builder){
+            if(app('tempStore')->has('zoneId')){
+                $zone = Zone::find(app('tempStore')->get('zoneId'));
+                if ($zone) {
+                    $states = Zones::tryFrom($zone->name)?->states();
+                    if ($states) {
+                        $builder->whereIn('state', $states);
+                    }
+                }
+            }
+        });
     }
 }

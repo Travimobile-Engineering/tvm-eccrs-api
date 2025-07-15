@@ -32,7 +32,7 @@ class IncidentService
     public function getIncidentStats()
     {
         // Query for last 6 months incident including the current month
-        $query = Incident::where('date', '>=', now()->subMonths(5)->startOfMonth());
+        $query = Incident::query()->where('date', '>=', now()->subMonths(5)->startOfMonth());
         $allIncidents = Incident::count();
 
         $curMonthStart = now()->startOfMonth();
