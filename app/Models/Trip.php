@@ -14,7 +14,6 @@ class Trip extends Model
     use HasFactory, TripFilter;
 
     protected $connection = 'transport';
-    protected static $zoneId = null;
 
     protected $fillable = [
         'user_id',
@@ -76,19 +75,23 @@ class Trip extends Model
         });
 
         static::addGlobalScope('zone', function ($builder) {
-            if (!empty(self::$zoneId)) {
+            if (app('tempStore')->has('zoneId')) {
                 
-                $zone = Zone::find(self::$zoneId)->name;
-                $states = Zones::tryFrom($zone)?->states();
+                $zone = Zone::find(app('tempStore')->has('zoneId'));
+                if($zone){
+                    $states = Zones::tryFrom($zone->name)?->states();
+                    if($states){
+                        $builder->where(function ($query) use ($states) {
+                            $query->whereHas('departureState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            })
+                            ->orWhereHas('destinationState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            });
+                        });
+                    }
+                }
                 
-                $builder->where(function ($query) use ($states) {
-                    $query->whereHas('departureState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    })
-                    ->orWhereHas('destinationState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    });
-                });
             }
         });
     }
@@ -143,10 +146,5 @@ class Trip extends Model
     public function scopeBetween($query, $from, $to)
     {
         $query->whereBetween('created_at', [$from, $to]);
-    }
-
-    public function setZoneId($zoneId)
-    {
-        self::$zoneId = $zoneId;
     }
 }

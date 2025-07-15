@@ -27,7 +27,7 @@ class UserService
         $this->setZoneId(request()->header('zone_id'));
         $travellers = User::whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
-            ->sortBy($this->sortColumn(request('sort')), $this->sortOrder(request('sort')))
+            ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($travellers), 'Travellers retrieved successfully');
@@ -50,7 +50,7 @@ class UserService
         $this->setZoneId(request()->header('zone_id'));
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
-            ->sortBy($this->sortColumn(request('sort')), $this->sortOrder(request('sort')))
+            ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($agents), 'Agents retrieved successfully');
@@ -63,7 +63,7 @@ class UserService
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->whereHas('vehicle')
-            ->sortBy($this->sortColumn(request('sort')), $this->sortOrder(request('sort')))
+            ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($drivers), 'Drivers retrieved successfully');
@@ -78,42 +78,49 @@ class UserService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $allBookingsCount = TripBooking::count();
-
-        $tripCountLast = TripBooking::whereBetween('created_at', [$startLastMonth, $endLastMonth])
-        ->count();
+        $bookingCounts = TripBooking::selectRaw('
+            COUNT(*) as totalBookings,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            )->first();
         
-        $tripCountThis = TripBooking::whereBetween('created_at', [$startThisMonth, $today])
-        ->count();
+        $agentCounts = User::isAgent()->selectRaw('
+            COUNT(*) as totalAgents,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis,
+        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $allAgentsCount = User::isAgent()
-        ->count();
+        $driverCounts = User::isDriver()->selectRaw('
+            COUNT(*) as totalDrivers,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis,
+        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $agentCountLast = User::isAgent()
-            ->whereBetween('created_at', [$startLastMonth, $endLastMonth])
-            ->count();
+        $transitCompanyCounts = TransitCompany::selectRaw('
+            COUNT(*) as totalCompanies,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis,
+        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $agentCountThis = User::isAgent()
-            ->whereBetween('created_at', [$startThisMonth, $today])
-            ->count();
+        $allBookingsCount = $bookingCounts->totalBookings;
+        $tripCountLast = $bookingCounts->tripCountLast;
+        $tripCountThis = $bookingCounts->tripCountThis;
 
-        $allDriversCount = User::isDriver()->count();
+        $allAgentsCount = $agentCounts->totalAgents;
+        $agentCountLast = $agentCounts->agentCountLast;
+        $agentCountThis = $agentCounts->agentCountThis;
 
-        $driverCountLast = User::isDriver()
-            ->whereBetween('created_at', [$startLastMonth, $endLastMonth])
-            ->count();
+        $allDriversCount = $driverCounts->totalDrivers;
+        $driverCountLast = $driverCounts->driverCountLast;
+        $driverCountThis = $driverCounts->driverCountThis;
 
-        $driverCountThis = User::isDriver()
-            ->whereBetween('created_at', [$startThisMonth, $today])
-            ->count();
-
-        $allTransitCompaniesCount = TransitCompany::count();
-
-        $companyCountLast = TransitCompany::whereBetween('created_at', [$startLastMonth, $endLastMonth])
-        ->count();
-
-        $companyCountThis = TransitCompany::whereBetween('created_at', [$startThisMonth, $today])
-        ->count();
+        $allTransitCompaniesCount = $transitCompanyCounts->totalCompanies;
+        $companyCountLast = $transitCompanyCounts->companyCountLast;
+        $companyCountThis = $transitCompanyCounts->companyCountThis;
 
         $distribution = TransitCompany::countByType();
 

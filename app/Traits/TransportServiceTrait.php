@@ -6,6 +6,7 @@ use App\Models\Trip;
 use App\Models\TripBooking;
 use App\Models\TransitCompany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 trait TransportServiceTrait
 {
@@ -82,20 +83,24 @@ trait TransportServiceTrait
         return $bookings->flatMap->travellingWith->filter(fn ($b) => $b->status === 0)->count();
     }
 
-    protected function sortColumn($sort){
-        return explode(',', $sort)[0] ?? 'created_at';
+    protected function sortColumn($sort, $table){
+        $column = explode(',', $sort)[0] ?? 'created_at';
+        if(Schema::hasColumn($table, $column)) {
+            return $column;
+        }
     }
 
-    protected function sortOrder($sort){
-        return explode(',', $sort)[1] ?? 'desc';
+    protected function sortDirection($sort){
+        $direction = explode(',', $sort)[1] ?? 'desc';
+        return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 
     public function setZoneId($zoneId)
     {
         if(! empty(request()->header('zone_id'))) {
-            Trip::setZoneId($zoneId);
-            TripBooking::setZoneId($zoneId);
-            TransitCompany::setZoneId($zoneId);
+            if(gettype($zoneId) === 'integer'){
+                app('tempStore')->store('zoneId', request()->header('zone_id'));
+            }
         }
     }
 }

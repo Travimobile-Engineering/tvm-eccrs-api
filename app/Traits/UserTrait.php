@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\TripBooking;
 use App\Models\TransitCompany;
+use Illuminate\Support\Facades\Schema;
 
 trait UserTrait
 {
@@ -75,17 +76,19 @@ trait UserTrait
     protected function setZoneId($zoneId)
     {
         if(! empty(request()->header('zone_id'))){
-            User::setZoneId($zoneId);
-            TripBooking::setZoneId($zoneId);
-            TransitCompany::setZoneId($zoneId);
+            app('tempStore')->store('zoneId', request()->header('zone_id'));
         }
     }
 
-    protected function sortColumn($sort){
-        return explode(',', $sort)[0] ?? 'created_at';
+    protected function sortColumn($sort, $table = 'users'){
+        $column = explode(',', $sort)[0] ?? 'created_at';
+        if(Schema::hasColumn($table, $column)) {
+            return $column;
+        }
     }
 
-    protected function sortOrder($sort){
-        return explode(',', $sort)[1] ?? 'desc';
+    protected function sortDirection($sort){
+        $direction = explode(',', $sort)[1] ?? 'desc';
+        return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 }

@@ -22,7 +22,6 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $connection = 'transport';
-    protected static $zoneId = null;
 
     protected $fillable = [
         'uuid',
@@ -136,24 +135,15 @@ class User extends Authenticatable
             });
     }
 
-    public function scopeFromZone(Builder $query, $zoneId){
-        $query->where('zone_id', $zoneId);
-    }
-
     public function scopeIsDriver(Builder $query){
         $query->whereHas('vehicle');
-    }
-
-    public function setZoneId($zoneId)
-    {
-        self::$zoneId = $zoneId;
     }
 
     public static function booted()
     {
         static::addGlobalScope('zone', function(Builder $builder){
-            if(!empty(self::$zone)){
-                $builder->where('zone_id', self::$zoneId);
+            if(app('tempStore')->has('zoneId')){
+                $builder->where('zone_id', app('tempStore')->get('zoneId'));
             }
         });
     }
