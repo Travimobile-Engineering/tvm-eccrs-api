@@ -9,21 +9,26 @@ use App\Models\State;
 use App\Models\TransitCompany;
 use App\Models\TripBooking;
 use App\Models\User;
+use App\Models\Zone;
 use App\Services\Actions\UserActionService;
 use App\Traits\HttpResponse;
+use App\Traits\UserTrait;
 
 class UserService
 {
-    use HttpResponse;
+    use HttpResponse, UserTrait;
 
     public function __construct(
         protected UserActionService $actionService,
-    ) {}
+    ) {
+        $this->setZoneId();
+    }
 
     public function getTravellers()
     {
         $travellers = User::whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
+            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($travellers), 'Travellers retrieved successfully');
@@ -45,6 +50,7 @@ class UserService
     {
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
+            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($agents), 'Agents retrieved successfully');
@@ -56,6 +62,7 @@ class UserService
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->whereHas('vehicle')
+            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($drivers), 'Drivers retrieved successfully');
@@ -68,40 +75,49 @@ class UserService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $allBookings = TripBooking::all();
-        $tripCountLast = $allBookings->filter(function ($trip) use ($startLastMonth, $endLastMonth) {
-            return $trip->created_at >= $startLastMonth && $trip->created_at <= $endLastMonth;
-        })->count();
+        $bookingCounts = TripBooking::selectRaw('
+            COUNT(*) as totalBookings,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $tripCountThis = $allBookings->filter(function ($trip) use ($startThisMonth, $today) {
-            return $trip->created_at >= $startThisMonth && $trip->created_at <= $today;
-        })->count();
+        $agentCounts = User::isAgent()->selectRaw('
+            COUNT(*) as totalAgents,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $allAgents = User::whereNotNull('agent_id')->get();
-        $agentCountLast = $allAgents->filter(function ($agent) use ($startLastMonth, $endLastMonth) {
-            return $agent->created_at >= $startLastMonth && $agent->created_at <= $endLastMonth;
-        })->count();
+        $driverCounts = User::isDriver()->selectRaw('
+            COUNT(*) as totalDrivers,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $agentCountThis = $allAgents->filter(function ($agent) use ($startThisMonth, $today) {
-            return $agent->created_at >= $startThisMonth && $agent->created_at <= $today;
-        })->count();
+        $transitCompanyCounts = TransitCompany::selectRaw('
+            COUNT(*) as totalCompanies,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountLast,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+        )->first();
 
-        $allDrivers = User::whereHas('vehicle')->get();
-        $driverCountLast = $allDrivers->filter(function ($driver) use ($startLastMonth, $endLastMonth) {
-            return $driver->created_at >= $startLastMonth && $driver->created_at <= $endLastMonth;
-        })->count();
-        $driverCountThis = $allDrivers->filter(function ($driver) use ($startThisMonth, $today) {
-            return $driver->created_at >= $startThisMonth && $driver->created_at <= $today;
-        })->count();
+        $allBookingsCount = $bookingCounts->totalBookings;
+        $tripCountLast = $bookingCounts->tripCountLast;
+        $tripCountThis = $bookingCounts->tripCountThis;
 
-        $allTransitCompanies = TransitCompany::all();
-        $companyCountLast = $allTransitCompanies->filter(function ($company) use ($startLastMonth, $endLastMonth) {
-            return $company->created_at >= $startLastMonth && $company->created_at <= $endLastMonth;
-        })->count();
+        $allAgentsCount = $agentCounts->totalAgents;
+        $agentCountLast = $agentCounts->agentCountLast;
+        $agentCountThis = $agentCounts->agentCountThis;
 
-        $companyCountThis = $allTransitCompanies->filter(function ($company) use ($startThisMonth, $today) {
-            return $company->created_at >= $startThisMonth && $company->created_at <= $today;
-        })->count();
+        $allDriversCount = $driverCounts->totalDrivers;
+        $driverCountLast = $driverCounts->driverCountLast;
+        $driverCountThis = $driverCounts->driverCountThis;
+
+        $allTransitCompaniesCount = $transitCompanyCounts->totalCompanies;
+        $companyCountLast = $transitCompanyCounts->companyCountLast;
+        $companyCountThis = $transitCompanyCounts->companyCountThis;
 
         $distribution = TransitCompany::countByType();
 
@@ -109,20 +125,20 @@ class UserService
 
         return $this->success([
             'travelers' => [
-                'total' => $allBookings->count(),
-                'percentageDiff' => calculatePercentageDifference($tripCountLast, $tripCountThis),
+                'total' => $allBookingsCount,
+                'percentageDiff' => calculatePercentageOf($tripCountLast, $tripCountThis),
             ],
             'agents' => [
-                'total' => $allAgents->count(),
-                'percentageDiff' => calculatePercentageDifference($agentCountLast, $agentCountThis),
+                'total' => $allAgentsCount,
+                'percentageDiff' => calculatePercentageOf($agentCountLast, $agentCountThis),
             ],
             'drivers' => [
-                'total' => $allDrivers->count(),
-                'percentageDiff' => calculatePercentageDifference($driverCountLast, $driverCountThis),
+                'total' => $allDriversCount,
+                'percentageDiff' => calculatePercentageOf($driverCountLast, $driverCountThis),
             ],
             'transport_companies' => [
-                'total' => $allTransitCompanies->count(),
-                'percentageDiff' => calculatePercentageDifference($companyCountLast, $companyCountThis),
+                'total' => $allTransitCompaniesCount,
+                'percentageDiff' => calculatePercentageOf($companyCountLast, $companyCountThis),
             ],
             'overview' => [
                 'total' => $totalThisMonth,
@@ -143,8 +159,13 @@ class UserService
     public function statActivities()
     {
 
-        if (request()->filled('zone')) {
-            $states = collect(Zones::tryFrom(request()->input('zone'))?->states());
+        $zone = request()->filled('zone') ? request()->input('zone') : null;
+        if (! empty(request('zone_id'))) {
+            $zone = Zone::find(request('zone_id'))->name;
+        }
+
+        if ($zone) {
+            $states = collect(Zones::tryFrom($zone)?->states());
             $activities = collect();
             $states->map(function ($state) use ($activities) {
                 $activities[$state] = $this->actionService->getStateActivityCount($state);

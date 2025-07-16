@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
+use App\Enums\Zones;
+use App\Traits\TripFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Trip extends Model
 {
-    use HasFactory;
+    use HasFactory, TripFilter;
 
     protected $connection = 'transport';
 
@@ -70,6 +72,27 @@ class Trip extends Model
             );
 
             app(SystemLogAction::class)->execute($dto);
+        });
+
+        static::addGlobalScope('zone', function ($builder) {
+            if (app('tempStore')->has('zoneId')) {
+
+                $zone = Zone::find(app('tempStore')->has('zoneId'));
+                if ($zone) {
+                    $states = Zones::tryFrom($zone->name)?->states();
+                    if ($states) {
+                        $builder->where(function ($query) use ($states) {
+                            $query->whereHas('departureState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            })
+                                ->orWhereHas('destinationState', function ($query) use ($states) {
+                                    return $query->whereIn('states.name', $states);
+                                });
+                        });
+                    }
+                }
+
+            }
         });
     }
 

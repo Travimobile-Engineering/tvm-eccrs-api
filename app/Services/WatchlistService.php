@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\Enums\WatchlistStatus;
+use App\Enums\WatchlistStatus;
 use App\Http\Resources\WatchlistResource;
 use App\Models\User;
 use App\Models\WatchList;
@@ -62,14 +62,14 @@ class WatchlistService
             [
                 'entries' => [
                     'total' => $totalCount,
-                    'percentDiff' => calculatePercentageDifference(
+                    'percentDiff' => calculatePercentageOf(
                         $totalCount,
                         $previousMonthCount
                     ),
                 ],
                 'apprehended' => [
                     'total' => $apprehendedCount,
-                    'percentDiff' => calculatePercentageDifference(
+                    'percentDiff' => calculatePercentageOf(
                         $apprehendedCount,
                         $previousMonthApprehendedCount
                     ),
