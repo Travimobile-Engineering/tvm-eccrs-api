@@ -29,7 +29,7 @@ class UserService
         $travellers = User::withoutGlobalScope('zone')
             ->whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
-            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
+            ->orderBy(sortColumn(request('sort'), 'users'), sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($travellers), 'Travellers retrieved successfully');
@@ -51,7 +51,7 @@ class UserService
     {
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
-            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
+            ->orderBy(sortColumn(request('sort'), 'users'), sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($agents), 'Agents retrieved successfully');
@@ -63,7 +63,7 @@ class UserService
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->whereHas('vehicle')
-            ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
+            ->orderBy(sortColumn(request('sort'), 'users'), sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination(UserResource::collection($drivers), 'Drivers retrieved successfully');
