@@ -79,18 +79,15 @@ trait UserTrait
         }
     }
 
-    protected function sortColumn($sort, $table = 'users')
-    {
-        $column = explode(',', $sort)[0] ?? 'created_at';
-        if (Schema::hasColumn($table, $column)) {
+    protected function sortColumn($sort, $table = 'users'){
+        $column = explode(',', $sort ?? 'created_at,desc')[0];
+        if(Schema::connection('transport')->hasColumn($table, $column)) {
             return $column;
         }
     }
-
-    protected function sortDirection($sort)
-    {
-        $direction = explode(',', $sort)[1] ?? 'desc';
-
+  
+    protected function sortDirection($sort){
+        $direction = explode(',', $sort ?? 'created_at,desc')[1] ?? 'desc';
         return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 }
