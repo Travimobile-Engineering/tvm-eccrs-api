@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\Enums\WatchlistStatus;
+use App\Enums\WatchlistStatus;
 use App\Http\Resources\WatchlistResource;
 use App\Models\User;
 use App\Models\WatchList;

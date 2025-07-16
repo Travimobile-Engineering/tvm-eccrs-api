@@ -3,16 +3,17 @@
 namespace App\Services;
 
 use App\Enums\Zones;
-use App\Http\Resources\TransportResource;
-use App\Http\Resources\UserResource;
-use App\Http\Resources\ZoneDataResource;
-use App\Models\State;
-use App\Models\TransitCompany;
 use App\Models\Trip;
-use App\Models\TripBooking;
+use App\Models\State;
 use App\Models\Vehicle;
+use App\Models\TripBooking;
 use App\Traits\HttpResponse;
+use App\Models\TransitCompany;
+use Illuminate\Support\Facades\DB;
+use App\Http\Resources\UserResource;
 use App\Traits\TransportServiceTrait;
+use App\Http\Resources\ZoneDataResource;
+use App\Http\Resources\TransportResource;
 
 class TransportService
 {
@@ -20,28 +21,31 @@ class TransportService
 
     public function getCompanies()
     {
+        $this->setZoneId();
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
-            ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"));
+            ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
+            ->sortBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
 
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
 
-    public function getCompanyDetails($id)
+    public function getCompanyDetails($company_id)
     {
         $company = TransitCompany::with(['bookings', 'drivers', 'activeTrips'])
-            ->findOrFail($id);
+            ->findOrFail($company_id);
 
         return $this->success(new TransportResource($company), 'Company retrieved successfully');
     }
 
-    public function getDrivers($id)
+    public function getDrivers($company_id)
     {
+        $this->setZoneId();
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
                     ->when(request('search'), fn ($q, $search) => $q->search($search));
             },
-        ])->findOrFail($id);
+        ])->findOrFail($company_id);
 
         return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
     }
@@ -51,6 +55,7 @@ class TransportService
         $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
             ->where('company_id', request()->id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
+            ->sortBy($this->sortColumn(request('sort'), 'vehicles'), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
@@ -65,6 +70,7 @@ class TransportService
 
     public function getTrips($id, $status = null)
     {
+        $this->setZoneId();
         $trips = Trip::with([
             'transitCompany',
             'manifest',
@@ -81,9 +87,10 @@ class TransportService
                     });
             },
             'vehicle' => fn ($q) => $q->with('driver', 'brand'),
-        ])
+            ])
             ->where('transit_company_id', $id)
             ->when($status, fn ($query) => $query->where('status', $status))
+            ->sortBy($this->sortColumn(request('sort'), 'trips'), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($trips->toResourceCollection(), 'Trips retrieved successfully');
@@ -91,6 +98,8 @@ class TransportService
 
     public function getStats()
     {
+        $this->setZoneId();
+
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
         $startThisMonth = now()->startOfMonth();
@@ -134,6 +143,13 @@ class TransportService
             ]);
         }
 
+        // Count of last 7 days trips
+        $recentTrips = Trip::where('created_at', '>=', now()->subDays(7))
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as trips_count')
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('day', 'asc')
+            ->get();
+
         return $this->success([
             'passengers' => [
                 'total' => $this->getTotalBookings($allBookings),
@@ -173,11 +189,19 @@ class TransportService
                 'awaiting_checkin' => $passengersCountThis > 0 ? ($totalUnconfirmedBookingThisMonth / $passengersCountThis) * 100 : 0,
                 'cancelled' => $passengersCountThis > 0 ? ($totalCancelledBookingThisMonth / $passengersCountThis) * 100 : 0,
             ],
+            'recent_trips' => $recentTrips->map(function ($trip) {
+                return [
+                    'day' => $trip->day,
+                    'trips_count' => $trip->trips_count,
+                ];
+            }),
         ], 'Stats retrieved successfully');
     }
 
     public function getZoneData($zone)
     {
+        $this->setZoneId();
+
         $states = State::pluck('name')->toArray();
         $trips = Trip::with('departureState', 'destinationState', 'bookings')
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
