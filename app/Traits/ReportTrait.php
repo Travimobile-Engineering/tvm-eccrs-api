@@ -228,7 +228,6 @@ trait ReportTrait
 
         $page = $request->get('page', 1);
         $perPage = $request->get('per_page', 15);
-
         $paginatedData = collect($reportData)->forPage($page, $perPage);
 
         $summary = collect($paginatedData)
