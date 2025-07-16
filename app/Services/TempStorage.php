@@ -4,7 +4,7 @@ namespace App\Services;
 
 class TempStorage
 {
-    protected $storage = [];
+    public $storage = [];
 
     public function store($key, $value)
     {
@@ -16,7 +16,7 @@ class TempStorage
         return $this->storage[$key] ?? null;
     }
 
-    public function has($key)
+    public function has($key): bool
     {
         return isset($this->storage[$key]);
     }
