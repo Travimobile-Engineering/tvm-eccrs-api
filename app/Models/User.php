@@ -107,8 +107,7 @@ class User extends Authenticatable
     #[Scope]
     protected function scopeIsAgent(Builder $query): void
     {
-        $query->whereNotNull('agent_id')
-            ->where('agent_id', '!=', '');
+        $query->whereNotNull('agent_id');
     }
 
     #[Scope]
