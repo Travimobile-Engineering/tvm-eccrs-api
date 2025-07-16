@@ -85,22 +85,22 @@ class UserService
         $agentCounts = User::isAgent()->selectRaw('
             COUNT(*) as totalAgents,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis', 
+        [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $driverCounts = User::isDriver()->selectRaw('
             COUNT(*) as totalDrivers,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $transitCompanyCounts = TransitCompany::selectRaw('
             COUNT(*) as totalCompanies,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis', 
+        [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $allBookingsCount = $bookingCounts->totalBookings;
