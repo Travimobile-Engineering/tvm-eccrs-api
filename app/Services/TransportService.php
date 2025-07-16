@@ -19,9 +19,13 @@ class TransportService
 {
     use HttpResponse, TransportServiceTrait;
 
-    public function getCompanies()
+    public function __construct()
     {
         $this->setZoneId();
+    }
+
+    public function getCompanies()
+    {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
             ->sortBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
@@ -39,7 +43,6 @@ class TransportService
 
     public function getDrivers($company_id)
     {
-        $this->setZoneId();
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
@@ -70,7 +73,6 @@ class TransportService
 
     public function getTrips($id, $status = null)
     {
-        $this->setZoneId();
         $trips = Trip::with([
             'transitCompany',
             'manifest',
@@ -98,8 +100,6 @@ class TransportService
 
     public function getStats()
     {
-        $this->setZoneId();
-
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
         $startThisMonth = now()->startOfMonth();
@@ -200,8 +200,6 @@ class TransportService
 
     public function getZoneData($zone)
     {
-        $this->setZoneId();
-
         $states = State::pluck('name')->toArray();
         $trips = Trip::with('departureState', 'destinationState', 'bookings')
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))

@@ -96,10 +96,10 @@ trait TransportServiceTrait
         return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 
-    public function setZoneId($zoneId)
+    public function setZoneId()
     {
         if (! empty(request('zone_id'))) {
-            if (gettype($zoneId) === 'integer') {
+            if (gettype(request('zone_id')) === 'integer') {
                 app('tempStore')->store('zoneId', request('zone_id'));
             }
         }

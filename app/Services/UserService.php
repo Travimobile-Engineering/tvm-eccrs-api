@@ -20,11 +20,12 @@ class UserService
 
     public function __construct(
         protected UserActionService $actionService,
-    ) {}
+    ) {
+        $this->setZoneId();
+    }
 
     public function getTravellers()
     {
-        $this->setZoneId();
         $travellers = User::whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -47,7 +48,6 @@ class UserService
 
     public function getAgents()
     {
-        $this->setZoneId();
         $agents = User::isAgent()
             ->when(request('search'), fn ($q, $search) => $q->search($search)->orWhere('agent_id', $search))
             ->sortBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
@@ -58,7 +58,6 @@ class UserService
 
     public function getDrivers()
     {
-        $this->setZoneId();
         $drivers = User::with(['documents', 'union'])
             ->where('user_category', UserType::DRIVER->value)
             ->when(request('search'), fn ($q, $search) => $q->search($search))
@@ -71,8 +70,6 @@ class UserService
 
     public function stats()
     {
-        $this->setZoneId();
-
         $startLastMonth = now()->subMonth()->startOfMonth();
         $endLastMonth = now()->subMonth()->endOfMonth();
         $startThisMonth = now()->startOfMonth();
@@ -88,22 +85,22 @@ class UserService
         $agentCounts = User::isAgent()->selectRaw('
             COUNT(*) as totalAgents,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $driverCounts = User::isDriver()->selectRaw('
             COUNT(*) as totalDrivers,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as driverCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $transitCompanyCounts = TransitCompany::selectRaw('
             COUNT(*) as totalCompanies,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis,
-        ', [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $allBookingsCount = $bookingCounts->totalBookings;
