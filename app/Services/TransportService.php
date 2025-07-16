@@ -28,7 +28,7 @@ class TransportService
     {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
-            ->sortBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
+            ->orderBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
 
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
@@ -58,7 +58,7 @@ class TransportService
         $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
             ->where('company_id', request()->id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
-            ->sortBy($this->sortColumn(request('sort'), 'vehicles'), $this->sortDirection(request('sort')))
+            ->orderBy($this->sortColumn(request('sort'), 'vehicles'), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
@@ -91,7 +91,7 @@ class TransportService
             ])
             ->where('transit_company_id', $id)
             ->when($status, fn ($query) => $query->where('status', $status))
-            ->sortBy($this->sortColumn(request('sort'), 'trips'), $this->sortDirection(request('sort')))
+            ->orderBy($this->sortColumn(request('sort'), 'trips'), $this->sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($trips->toResourceCollection(), 'Trips retrieved successfully');
