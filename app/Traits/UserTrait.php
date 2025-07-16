@@ -3,9 +3,6 @@
 namespace App\Traits;
 
 use App\Models\Role;
-use App\Models\User;
-use App\Models\TripBooking;
-use App\Models\TransitCompany;
 use Illuminate\Support\Facades\Schema;
 
 trait UserTrait
@@ -75,20 +72,23 @@ trait UserTrait
 
     protected function setZoneId()
     {
-        if(! empty(request('zone_id'))){
+        if (! empty(request('zone_id'))) {
             app('tempStore')->store('zoneId', request('zone_id'));
         }
     }
 
-    protected function sortColumn($sort, $table = 'users'){
+    protected function sortColumn($sort, $table = 'users')
+    {
         $column = explode(',', $sort)[0] ?? 'created_at';
-        if(Schema::hasColumn($table, $column)) {
+        if (Schema::hasColumn($table, $column)) {
             return $column;
         }
     }
 
-    protected function sortDirection($sort){
+    protected function sortDirection($sort)
+    {
         $direction = explode(',', $sort)[1] ?? 'desc';
+
         return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 }
