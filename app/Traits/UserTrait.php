@@ -76,7 +76,7 @@ trait UserTrait
     protected function setZoneId()
     {
         if(! empty(request('zone_id'))){
-            if(gettype(request('zone_id')) === 'integer'){
+            if(is_numeric(request('zone_id'))){
                 app('tempStore')->store('zoneId', request('zone_id'));
             }
         }

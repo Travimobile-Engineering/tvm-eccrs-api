@@ -46,7 +46,8 @@ class TransportService
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
-                    ->when(request('search'), fn ($q, $search) => $q->search($search));
+                ->withoutGlobalScope('zone')
+                ->when(request('search'), fn ($q, $search) => $q->search($search));
             },
         ])->findOrFail($company_id);
 
@@ -55,7 +56,14 @@ class TransportService
 
     public function getVehicles()
     {
-        $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
+        $vehicles = Vehicle::with([
+            'brand', 'company', 
+            'driver' => function($q){
+                return $q
+                ->with('documents')
+                ->withoutGlobalScope('zone');
+            }
+            ])
             ->where('company_id', request()->id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
             ->orderBy($this->sortColumn(request('sort'), 'vehicles'), $this->sortDirection(request('sort')))
@@ -73,8 +81,8 @@ class TransportService
     public function getTrips($id, $status = null)
     {
         $trips = Trip::with([
-            'transitCompany',
             'manifest',
+            'transitCompany' => fn($q) => $q->withoutGlobalScope('zone'),
             'departureCity' => function ($q) {
                 $q->with('state')
                     ->when(request('search'), function ($q, $search) {
@@ -104,7 +112,12 @@ class TransportService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $allBookings = TripBooking::with(['travellingWith', 'trip' => fn ($q) => $q->with('departureState', 'destinationState')])->get();
+        $allBookings = TripBooking::with([
+            'travellingWith', 
+            'trip' => fn ($q) => $q
+                ->with('departureState', 'destinationState')
+                ->withoutGlobalScope('zone')
+            ])->get();
         $thisMonthBookings = $allBookings->filter(function ($booking) use ($startThisMonth, $today) {
             return $booking->created_at >= $startThisMonth && $booking->created_at <= $today;
         });
@@ -200,9 +213,15 @@ class TransportService
     public function getZoneData($zone)
     {
         $states = State::pluck('name')->toArray();
-        $trips = Trip::with('departureState', 'destinationState', 'bookings')
+        $trips = Trip::with([
+            'departureState',
+            'destinationState',
+            'bookings' => fn($q) => $q->withoutGlobalScope('zone')
+            ])
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
-            ->when($zone && ! request('state') && ! request('search'), function ($query) use ($zone, &$states) {
+            ->when(
+                $zone && ! request('state') && ! request('search') && ! request('zone_id'), 
+                function ($query) use ($zone, &$states) {
 
                 $states = Zones::tryFrom($zone)?->states();
                 $query->where(function ($query) use ($states) {

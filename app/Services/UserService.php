@@ -26,7 +26,8 @@ class UserService
 
     public function getTravellers()
     {
-        $travellers = User::whereHas('tripBookings')
+        $travellers = User::withoutGlobalScope('zone')
+            ->whereHas('tripBookings')
             ->when(request('search'), fn ($q, $search) => $q->search($search))
             ->orderBy($this->sortColumn(request('sort')), $this->sortDirection(request('sort')))
             ->paginate(25);

@@ -77,7 +77,7 @@ class Trip extends Model
         static::addGlobalScope('zone', function ($builder) {
             if (app('tempStore')->has('zoneId')) {
                 
-                $zone = Zone::find(app('tempStore')->has('zoneId'));
+                $zone = Zone::on('transport')->find(app('tempStore')->get('zoneId'));
                 if($zone){
                     $states = Zones::tryFrom($zone->name)?->states();
                     if($states){
