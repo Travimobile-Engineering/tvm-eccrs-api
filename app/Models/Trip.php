@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\Zones;
 use App\Actions\SystemLogAction;
 use App\Dtos\SystemLogData;
+use App\Enums\Zones;
 use App\Traits\TripFilter;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Trip extends Model
 {
@@ -76,22 +76,28 @@ class Trip extends Model
 
         static::addGlobalScope('zone', function ($builder) {
             if (app('tempStore')->has('zoneId')) {
+<<<<<<< HEAD
                 
                 $zone = Zone::on('transport')->find(app('tempStore')->get('zoneId'));
                 if($zone){
+=======
+
+                $zone = Zone::find(app('tempStore')->has('zoneId'));
+                if ($zone) {
+>>>>>>> 7e9765f77b043ce42dc6ca1d0246589b9b5ec14e
                     $states = Zones::tryFrom($zone->name)?->states();
-                    if($states){
+                    if ($states) {
                         $builder->where(function ($query) use ($states) {
                             $query->whereHas('departureState', function ($query) use ($states) {
                                 return $query->whereIn('states.name', $states);
                             })
-                            ->orWhereHas('destinationState', function ($query) use ($states) {
-                                return $query->whereIn('states.name', $states);
-                            });
+                                ->orWhereHas('destinationState', function ($query) use ($states) {
+                                    return $query->whereIn('states.name', $states);
+                                });
                         });
                     }
                 }
-                
+
             }
         });
     }

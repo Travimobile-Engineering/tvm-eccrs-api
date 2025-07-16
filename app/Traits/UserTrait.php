@@ -3,9 +3,6 @@
 namespace App\Traits;
 
 use App\Models\Role;
-use App\Models\User;
-use App\Models\TripBooking;
-use App\Models\TransitCompany;
 use Illuminate\Support\Facades\Schema;
 
 trait UserTrait
@@ -88,7 +85,7 @@ trait UserTrait
             return $column;
         }
     }
-
+  
     protected function sortDirection($sort){
         $direction = explode(',', $sort ?? 'created_at,desc')[1] ?? 'desc';
         return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';

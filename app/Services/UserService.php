@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Enums\Zones;
+use App\Http\Resources\UserResource;
+use App\Models\State;
+use App\Models\TransitCompany;
+use App\Models\TripBooking;
 use App\Models\User;
 use App\Models\Zone;
-use App\Models\State;
-use App\Enums\UserType;
-use App\Traits\UserTrait;
-use App\Models\TripBooking;
-use App\Traits\HttpResponse;
-use App\Models\TransitCompany;
-use App\Http\Resources\UserResource;
 use App\Services\Actions\UserActionService;
+use App\Traits\HttpResponse;
+use App\Traits\UserTrait;
 
 class UserService
 {
@@ -81,13 +81,13 @@ class UserService
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountLast,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountThis',
             [$startLastMonth, $endLastMonth, $startThisMonth, $today]
-            )->first();
-        
+        )->first();
+
         $agentCounts = User::isAgent()->selectRaw('
             COUNT(*) as totalAgents,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis', 
-        [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as agentCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $driverCounts = User::isDriver()->selectRaw('
@@ -100,8 +100,8 @@ class UserService
         $transitCompanyCounts = TransitCompany::selectRaw('
             COUNT(*) as totalCompanies,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountLast,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis', 
-        [$startLastMonth, $endLastMonth, $startThisMonth, $today]
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as companyCountThis',
+            [$startLastMonth, $endLastMonth, $startThisMonth, $today]
         )->first();
 
         $allBookingsCount = $bookingCounts->totalBookings;
@@ -161,7 +161,7 @@ class UserService
     {
 
         $zone = request()->filled('zone') ? request()->input('zone') : null;
-        if(!empty(request('zone_id'))){
+        if (! empty(request('zone_id'))) {
             $zone = Zone::find(request('zone_id'))->name;
         }
 

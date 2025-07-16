@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton('tempStore', function () {
-            return new TempStorage();
+            return new TempStorage;
         });
     }
 

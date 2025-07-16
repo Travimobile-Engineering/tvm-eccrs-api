@@ -27,12 +27,10 @@ trait TripFilter
         $query->whereBetween('created_at', [$from, $to]);
     }
 
-    public function scopeFilterByUserZone($query, $user)
+    public function scopeFilterByZone($query, $user)
     {
         if ($user->role && $user->role !== 'super_admin') {
-            $query->whereHas('trip', function ($q) use ($user) {
-                $q->where('zone_id', $user->zone_id);
-            });
+            $query->where('zone_id', $user->zone_id);
         }
     }
 
