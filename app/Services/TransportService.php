@@ -3,17 +3,17 @@
 namespace App\Services;
 
 use App\Enums\Zones;
-use App\Models\Trip;
-use App\Models\State;
-use App\Models\Vehicle;
-use App\Models\TripBooking;
-use App\Traits\HttpResponse;
-use App\Models\TransitCompany;
-use Illuminate\Support\Facades\DB;
-use App\Http\Resources\UserResource;
-use App\Traits\TransportServiceTrait;
-use App\Http\Resources\ZoneDataResource;
 use App\Http\Resources\TransportResource;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\ZoneDataResource;
+use App\Models\State;
+use App\Models\TransitCompany;
+use App\Models\Trip;
+use App\Models\TripBooking;
+use App\Models\Vehicle;
+use App\Traits\HttpResponse;
+use App\Traits\TransportServiceTrait;
+use Illuminate\Support\Facades\DB;
 
 class TransportService
 {
@@ -67,6 +67,7 @@ class TransportService
     public function getVehicle($id)
     {
         $vehicle = Vehicle::with(['brand', 'driver.documents', 'company'])->findOrFail($id);
+
         return $this->success($vehicle->toResource(), 'Vehicle retrieved successfully');
     }
 
@@ -88,7 +89,7 @@ class TransportService
                     });
             },
             'vehicle' => fn ($q) => $q->with('driver', 'brand'),
-            ])
+        ])
             ->where('transit_company_id', $id)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->orderBy($this->sortColumn(request('sort'), 'trips'), $this->sortDirection(request('sort')))

@@ -123,10 +123,10 @@ class User extends Authenticatable
 
     public function scopeFromWatchlist($query, WatchList $watchlist)
     {
-        return $query->with(['tripBookings.trip' => fn($q) => $q->with(
-                'transitCompany', 'departureState', 'departureCity', 
-                'destinationState', 'destinationCity'
-            )])
+        return $query->with(['tripBookings.trip' => fn ($q) => $q->with(
+            'transitCompany', 'departureState', 'departureCity',
+            'destinationState', 'destinationCity'
+        )])
             ->where(function ($query) use ($watchlist) {
                 $query->when($watchlist->nin, fn ($q) => $q->where('nin', $watchlist->nin))
                     ->when($watchlist->phone, fn ($q) => $q->orWhere('phone_number', $watchlist->phone))
@@ -134,14 +134,15 @@ class User extends Authenticatable
             });
     }
 
-    public function scopeIsDriver(Builder $query){
+    public function scopeIsDriver(Builder $query)
+    {
         $query->whereHas('vehicle');
     }
 
     public static function booted()
     {
-        static::addGlobalScope('zone', function(Builder $builder){
-            if(app('tempStore')->has('zoneId')){
+        static::addGlobalScope('zone', function (Builder $builder) {
+            if (app('tempStore')->has('zoneId')) {
                 $builder->where('zone_id', app('tempStore')->get('zoneId'));
             }
         });
