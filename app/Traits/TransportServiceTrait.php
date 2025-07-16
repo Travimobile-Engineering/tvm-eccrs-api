@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Trip;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 trait TransportServiceTrait
 {
@@ -55,8 +56,8 @@ trait TransportServiceTrait
             'outboundData' => $outboundData,
             'lastMonthInboundPassengersCount' => $lastMonthInboundPassengers->total,
             'lastMonthOutboundPassengersCount' => $lastMonthOutboundPassengers->total,
-            'inboundPercentageDiff' => calculatePercentageDifference($lastMonthInboundPassengers->total, $inboundData->total),
-            'outboundPercentageDiff' => calculatePercentageDifference($lastMonthOutboundPassengers->total, $outboundData->total),
+            'inboundPercentageDiff' => calculatePercentageOf($lastMonthInboundPassengers->total, $inboundData->total),
+            'outboundPercentageDiff' => calculatePercentageOf($lastMonthOutboundPassengers->total, $outboundData->total),
         ];
     }
 
@@ -78,5 +79,29 @@ trait TransportServiceTrait
     protected function getTotalCancelledBookings(Collection $bookings): int
     {
         return $bookings->flatMap->travellingWith->filter(fn ($b) => $b->status === 0)->count();
+    }
+
+    protected function sortColumn($sort, $table)
+    {
+        $column = explode(',', $sort)[0] ?? 'created_at';
+        if (Schema::hasColumn($table, $column)) {
+            return $column;
+        }
+    }
+
+    protected function sortDirection($sort)
+    {
+        $direction = explode(',', $sort)[1] ?? 'desc';
+
+        return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
+    }
+
+    public function setZoneId()
+    {
+        if (! empty(request('zone_id'))) {
+            if (gettype(request('zone_id')) === 'integer') {
+                app('tempStore')->store('zoneId', request('zone_id'));
+            }
+        }
     }
 }

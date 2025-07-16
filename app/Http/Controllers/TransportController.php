@@ -20,7 +20,7 @@ class TransportController extends Controller
         return $this->service->getCompanyDetails($id);
     }
 
-    public function getDrivers($id)
+    public function getDriver($id)
     {
         return $this->service->getDrivers($id);
     }

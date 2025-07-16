@@ -107,8 +107,7 @@ class User extends Authenticatable
     #[Scope]
     protected function scopeIsAgent(Builder $query): void
     {
-        $query->whereNotNull('agent_id')
-            ->where('agent_id', '!=', '');
+        $query->whereNotNull('agent_id');
     }
 
     #[Scope]
@@ -133,5 +132,19 @@ class User extends Authenticatable
                     ->when($watchlist->phone, fn ($q) => $q->orWhere('phone_number', $watchlist->phone))
                     ->when($watchlist->email, fn ($q) => $q->orWhere('email', $watchlist->email));
             });
+    }
+
+    public function scopeIsDriver(Builder $query)
+    {
+        $query->whereHas('vehicle');
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope('zone', function (Builder $builder) {
+            if (app('tempStore')->has('zoneId')) {
+                $builder->where('zone_id', app('tempStore')->get('zoneId'));
+            }
+        });
     }
 }
