@@ -74,8 +74,8 @@ class Trip extends Model
             app(SystemLogAction::class)->execute($dto);
         });
 
-        static::addGlobalScope('zone', function ($builder) {
-            if (app('tempStore')->has('zoneId')) {
+        if (app('tempStore')->has('zoneId')) {
+            static::addGlobalScope('zone', function ($builder) {
                 
                 $zone = Zone::on('transport')->find(app('tempStore')->get('zoneId'));
                 if($zone){
@@ -92,8 +92,8 @@ class Trip extends Model
                     }
                 }
 
-            }
-        });
+            });
+        }
     }
 
     public function casts(): array
