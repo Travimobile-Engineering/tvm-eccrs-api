@@ -4,7 +4,7 @@ name: Build and Push Travi Backend Image to Registry
 
 on:
   push:
-    branches: [ master, staging, dev ]
+    branches: [ master, staging, dev, test ]
 
 env:
   IMAGE_URI: "820242924853.dkr.ecr.eu-west-2.amazonaws.com/nginx-eccrs-service"
@@ -41,6 +41,8 @@ jobs:
           echo "tag=stg" >> $GITHUB_ENV
         elif [[ $GITHUB_REF == refs/heads/dev ]]; then
           echo "tag=dev" >> $GITHUB_ENV
+        elif [[ $GITHUB_REF == refs/heads/test ]]; then
+          echo "tag=test" >> $GITHUB_ENV
         fi
 
     - name: Build Docker image
