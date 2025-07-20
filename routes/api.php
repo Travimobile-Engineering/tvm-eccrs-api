@@ -1,15 +1,16 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\GeneralController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\ManifestController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransportController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\WatchlistController;
-use Illuminate\Support\Facades\Route;
 
 Route::middleware('validate.header')
     ->prefix('eccrs')
@@ -139,6 +140,14 @@ Route::middleware('validate.header')
 
                         // System Log
                         Route::get('/system-log', 'getSystemLog');
+                    });
+                
+                Route::prefix('dashboard')
+                    ->controller(DashboardController::class)
+                    ->group(function(){
+                        Route::get('/watchlist/overview', 'overview');
+                        Route::get('/watchlist/list', 'list');
+                        Route::get('/watchlist/{id}', 'getRecord');
                     });
 
                 // Other APIs
