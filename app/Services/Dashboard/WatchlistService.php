@@ -16,26 +16,32 @@ class WatchlistService
     public function overview()
     {
         $now = now();
-        $prevMonthStart = $now->subMonth()->startOfMonth();
-        $prevMonthEnd = $now->subMonth()->endOfMonth();
+        $prevMonthStart =  $now->copy()->subMonth()->startOfMonth();
+        $prevMonthEnd = $now->copy()->subMonth()->endOfMonth();
         $zones = Zones::cases();
         
-        $sql = '
+        $sql = ['
             COUNT(*) as total,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as lastMonthTotal,
-        ';
+        '];
+
         foreach($zones as $zone){
             $alias = str_replace('-', '_', $zone->value) . '_count';
-            $states = implode("','", $zone->states());
-            $sql .= "COUNT(CASE WHEN alert_location IN ('$states') THEN 1 END) as $alias,";
+            $states = implode("','", 
+                collect($zone->states())
+                    ->map(fn($state) => preg_replace('/[^a-zA-Z0-9\s]/', '', $state))
+                    ->toArray()
+                );
+            $sql[] = "COUNT(CASE WHEN alert_location IN ('$states') THEN 1 END) as $alias";
             
             foreach($zone->states() as $state){
+                $state = preg_replace('/[^a-zA-Z0-9\s]/', '', $state);
                 $alias = preg_replace('/-/', '_', $zone->value) . '_' . str_replace(' ', '_', $state) .'_count';
-                $sql .= "COUNT(CASE WHEN alert_location = '$state' THEN 1 END) as $alias,";
+                $sql[] = "COUNT(CASE WHEN alert_location = '$state' THEN 1 END) as $alias";
             }
         }
         
-        $counts = WatchList::selectRaw(rtrim($sql, ','),
+        $counts = WatchList::selectRaw(implode(',', $sql),
         [$prevMonthStart, $prevMonthEnd])->first();
 
         $data = [
@@ -45,15 +51,15 @@ class WatchlistService
         
         foreach($zones as $zone){
             $states = $zone->states();
-            $zone = str_replace('-', '_', $zone->value);
+            $zoneKey = str_replace('-', '_', $zone->value);
             
             $statesData = [];
             foreach($states as $state){
-                $state = str_replace(' ', '_', $state);
-                $statesData[$state] = $counts[$zone . '_' . $state . '_count'];
+                $stateKey = str_replace(' ', '_', $state);
+                $statesData[$stateKey] = $counts[$zoneKey . '_' . $stateKey . '_count'] ?? 0;
             }
-            $data[$zone] = [
-                'total' => $counts[$zone .'_count'],
+            $data[$zoneKey] = [
+                'total' => $counts[$zoneKey .'_count'],
                 ...$statesData,
             ];
         }
@@ -63,7 +69,13 @@ class WatchlistService
 
     public function list(){
 
-        if(request()->filled('zone') && empty(request('state'))){
+        $payload = (object) [
+            'zone' => request('zone'),
+            'state' => request('state')
+        ];
+
+        $states = [];
+        if(! empty($payload->zone) && empty($payload->state)){
             $zone = Zones::tryFrom(request('zone'));
             if($zone){
                 $states = $zone->states();
