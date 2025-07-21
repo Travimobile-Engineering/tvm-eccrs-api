@@ -162,11 +162,12 @@ if(! function_exists('sortDirection'))
 {
     function sortDirection($sort)
     {
+        $direction = 'asc';
         if(! empty($sort)){
 
-            $direction = explode(',', $sort)[1] ?? 'desc';
-            return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
+            $direction = explode(',', $sort)[1] ?? 'asc';
+            return in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
         }
-        return 'desc';
+        return $direction;
     }
 }
