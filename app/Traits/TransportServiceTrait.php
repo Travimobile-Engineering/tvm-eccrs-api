@@ -4,7 +4,6 @@ namespace App\Traits;
 
 use App\Models\Trip;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 
 trait TransportServiceTrait
 {
@@ -83,8 +82,8 @@ trait TransportServiceTrait
 
     public function setZoneId()
     {
-        if(! empty(request('zone_id'))) {
-            if(is_numeric(request('zone_id'))){
+        if (! empty(request('zone_id'))) {
+            if (is_numeric(request('zone_id'))) {
                 app('tempStore')->store('zoneId', request('zone_id'));
             }
         }

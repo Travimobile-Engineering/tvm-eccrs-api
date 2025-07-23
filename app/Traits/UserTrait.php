@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use App\Models\Role;
-use Illuminate\Support\Facades\Schema;
 
 trait UserTrait
 {
@@ -72,8 +71,8 @@ trait UserTrait
 
     protected function setZoneId()
     {
-        if(! empty(request('zone_id'))){
-            if(is_numeric(request('zone_id'))){
+        if (! empty(request('zone_id'))) {
+            if (is_numeric(request('zone_id'))) {
                 app('tempStore')->store('zoneId', request('zone_id'));
             }
         }
