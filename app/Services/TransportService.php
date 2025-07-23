@@ -46,8 +46,8 @@ class TransportService
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
-                ->withoutGlobalScope('zone')
-                ->when(request('search'), fn ($q, $search) => $q->search($search));
+                    ->withoutGlobalScope('zone')
+                    ->when(request('search'), fn ($q, $search) => $q->search($search));
             },
         ])->findOrFail($company_id);
 
@@ -57,13 +57,13 @@ class TransportService
     public function getVehicles()
     {
         $vehicles = Vehicle::with([
-            'brand', 'company', 
-            'driver' => function($q){
+            'brand', 'company',
+            'driver' => function ($q) {
                 return $q
-                ->with('documents')
-                ->withoutGlobalScope('zone');
-            }
-            ])
+                    ->with('documents')
+                    ->withoutGlobalScope('zone');
+            },
+        ])
             ->where('company_id', request()->id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
             ->orderBy(sortColumn(request('sort'), 'vehicles'), sortDirection(request('sort')))
@@ -83,7 +83,7 @@ class TransportService
     {
         $trips = Trip::with([
             'manifest',
-            'transitCompany' => fn($q) => $q->withoutGlobalScope('zone'),
+            'transitCompany' => fn ($q) => $q->withoutGlobalScope('zone'),
             'departureCity' => function ($q) {
                 $q->with('state')
                     ->when(request('search'), function ($q, $search) {
@@ -114,11 +114,11 @@ class TransportService
         $today = now()->startOfDay();
 
         $allBookings = TripBooking::with([
-            'travellingWith', 
+            'travellingWith',
             'trip' => fn ($q) => $q
                 ->with('departureState', 'destinationState')
-                ->withoutGlobalScope('zone')
-            ])->get();
+                ->withoutGlobalScope('zone'),
+        ])->get();
         $thisMonthBookings = $allBookings->filter(function ($booking) use ($startThisMonth, $today) {
             return $booking->created_at >= $startThisMonth && $booking->created_at <= $today;
         });
@@ -217,23 +217,23 @@ class TransportService
         $trips = Trip::with([
             'departureState',
             'destinationState',
-            'bookings' => fn($q) => $q->withoutGlobalScope('zone')
-            ])
+            'bookings' => fn ($q) => $q->withoutGlobalScope('zone'),
+        ])
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
             ->when(
-                $zone && ! request('state') && ! request('search') && ! request('zone_id'), 
+                $zone && ! request('state') && ! request('search') && ! request('zone_id'),
                 function ($query) use ($zone, &$states) {
 
-                $states = Zones::tryFrom($zone)?->states();
-                $query->where(function ($query) use ($states) {
-                    $query->whereHas('departureState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    })
-                        ->orWhereHas('destinationState', function ($query) use ($states) {
+                    $states = Zones::tryFrom($zone)?->states();
+                    $query->where(function ($query) use ($states) {
+                        $query->whereHas('departureState', function ($query) use ($states) {
                             return $query->whereIn('states.name', $states);
-                        });
-                });
-            })
+                        })
+                            ->orWhereHas('destinationState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            });
+                    });
+                })
             ->when(request('state') && ! request('search'), function ($query) use (&$states) {
 
                 $states = [request('state')];
