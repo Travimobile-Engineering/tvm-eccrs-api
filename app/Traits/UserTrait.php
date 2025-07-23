@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use App\Models\Role;
-use Illuminate\Support\Facades\Schema;
 
 trait UserTrait
 {
@@ -73,21 +72,9 @@ trait UserTrait
     protected function setZoneId()
     {
         if (! empty(request('zone_id'))) {
-            if (gettype(request('zone_id')) === 'integer') {
+            if (is_numeric(request('zone_id'))) {
                 app('tempStore')->store('zoneId', request('zone_id'));
             }
         }
-    }
-
-    protected function sortColumn($sort, $table = 'users'){
-        $column = explode(',', $sort ?? 'created_at,desc')[0];
-        if(Schema::connection('transport')->hasColumn($table, $column)) {
-            return $column;
-        }
-    }
-  
-    protected function sortDirection($sort){
-        $direction = explode(',', $sort ?? 'created_at,desc')[1] ?? 'desc';
-        return in_array($direction, ['asc', 'desc']) ? $direction : 'desc';
     }
 }

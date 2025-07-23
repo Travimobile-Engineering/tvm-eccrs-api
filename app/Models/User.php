@@ -141,10 +141,10 @@ class User extends Authenticatable
 
     public static function booted()
     {
-        static::addGlobalScope('zone', function (Builder $builder) {
-            if (app('tempStore')->has('zoneId')) {
+        if (app('tempStore')->has('zoneId')) {
+            static::addGlobalScope('zone', function (Builder $builder) {
                 $builder->where('zone_id', app('tempStore')->get('zoneId'));
-            }
-        });
+            });
+        }
     }
 }

@@ -69,16 +69,16 @@ class TransitCompany extends Model
 
     public static function booted()
     {
-        static::addGlobalScope('zone', function (Builder $builder) {
-            if (app('tempStore')->has('zoneId')) {
-                $zone = Zone::find(app('tempStore')->get('zoneId'));
+        if (app('tempStore')->has('zoneId')) {
+            static::addGlobalScope('zone', function (Builder $builder) {
+                $zone = Zone::on('transport')->find(app('tempStore')->get('zoneId'));
                 if ($zone) {
                     $states = Zones::tryFrom($zone->name)?->states();
                     if ($states) {
                         $builder->whereIn('state', $states);
                     }
                 }
-            }
-        });
+            });
+        }
     }
 }
