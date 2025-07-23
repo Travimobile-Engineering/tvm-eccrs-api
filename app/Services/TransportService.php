@@ -28,7 +28,7 @@ class TransportService
     {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
-            ->orderBy($this->sortColumn(request('sort'), 'transitCompanies'), $this->sortDirection(request('sort')));
+            ->orderBy(sortColumn(request('sort'), 'transitCompanies'), sortDirection(request('sort')));
 
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
     }
@@ -46,6 +46,7 @@ class TransportService
         $company = TransitCompany::with([
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
+                    ->withoutGlobalScope('zone')
                     ->when(request('search'), fn ($q, $search) => $q->search($search));
             },
         ])->findOrFail($company_id);
@@ -55,10 +56,17 @@ class TransportService
 
     public function getVehicles()
     {
-        $vehicles = Vehicle::with(['brand', 'driver.documents', 'company'])
+        $vehicles = Vehicle::with([
+            'brand', 'company',
+            'driver' => function ($q) {
+                return $q
+                    ->with('documents')
+                    ->withoutGlobalScope('zone');
+            },
+        ])
             ->where('company_id', request()->id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
-            ->orderBy($this->sortColumn(request('sort'), 'vehicles'), $this->sortDirection(request('sort')))
+            ->orderBy(sortColumn(request('sort'), 'vehicles'), sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
@@ -74,8 +82,8 @@ class TransportService
     public function getTrips($id, $status = null)
     {
         $trips = Trip::with([
-            'transitCompany',
             'manifest',
+            'transitCompany' => fn ($q) => $q->withoutGlobalScope('zone'),
             'departureCity' => function ($q) {
                 $q->with('state')
                     ->when(request('search'), function ($q, $search) {
@@ -92,7 +100,7 @@ class TransportService
         ])
             ->where('transit_company_id', $id)
             ->when($status, fn ($query) => $query->where('status', $status))
-            ->orderBy($this->sortColumn(request('sort'), 'trips'), $this->sortDirection(request('sort')))
+            ->orderBy(sortColumn(request('sort'), 'trips'), sortDirection(request('sort')))
             ->paginate(25);
 
         return $this->withPagination($trips->toResourceCollection(), 'Trips retrieved successfully');
@@ -105,7 +113,12 @@ class TransportService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $allBookings = TripBooking::with(['travellingWith', 'trip' => fn ($q) => $q->with('departureState', 'destinationState')])->get();
+        $allBookings = TripBooking::with([
+            'travellingWith',
+            'trip' => fn ($q) => $q
+                ->with('departureState', 'destinationState')
+                ->withoutGlobalScope('zone'),
+        ])->get();
         $thisMonthBookings = $allBookings->filter(function ($booking) use ($startThisMonth, $today) {
             return $booking->created_at >= $startThisMonth && $booking->created_at <= $today;
         });
@@ -201,20 +214,26 @@ class TransportService
     public function getZoneData($zone)
     {
         $states = State::pluck('name')->toArray();
-        $trips = Trip::with('departureState', 'destinationState', 'bookings')
+        $trips = Trip::with([
+            'departureState',
+            'destinationState',
+            'bookings' => fn ($q) => $q->withoutGlobalScope('zone'),
+        ])
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
-            ->when($zone && ! request('state') && ! request('search'), function ($query) use ($zone, &$states) {
+            ->when(
+                $zone && ! request('state') && ! request('search') && ! request('zone_id'),
+                function ($query) use ($zone, &$states) {
 
-                $states = Zones::tryFrom($zone)?->states();
-                $query->where(function ($query) use ($states) {
-                    $query->whereHas('departureState', function ($query) use ($states) {
-                        return $query->whereIn('states.name', $states);
-                    })
-                        ->orWhereHas('destinationState', function ($query) use ($states) {
+                    $states = Zones::tryFrom($zone)?->states();
+                    $query->where(function ($query) use ($states) {
+                        $query->whereHas('departureState', function ($query) use ($states) {
                             return $query->whereIn('states.name', $states);
-                        });
-                });
-            })
+                        })
+                            ->orWhereHas('destinationState', function ($query) use ($states) {
+                                return $query->whereIn('states.name', $states);
+                            });
+                    });
+                })
             ->when(request('state') && ! request('search'), function ($query) use (&$states) {
 
                 $states = [request('state')];

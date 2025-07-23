@@ -49,8 +49,8 @@ class ManifestResource extends JsonResource
                 'expiration_date' => $doc->expiration_date,
                 'status' => $doc->status,
             ]),
-            'passengers' => $this->trip->bookings?->map(function ($booking) {
-                return $booking->tripBookingPassengers->flatMap(function ($passenger) {
+            'passengers' => $this->trip->bookings?->flatMap(function ($booking) {
+                return $booking->tripBookingPassengers->map(function ($passenger) {
                     return [
                         'id' => $passenger->id,
                         'name' => $passenger->name,
@@ -59,7 +59,7 @@ class ManifestResource extends JsonResource
                         'gender' => $passenger->gender,
                     ];
                 });
-            })->toArray(),
+            })->values()->toArray(),
         ];
     }
 }

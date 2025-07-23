@@ -5,6 +5,7 @@ use App\Dtos\SendCodeData;
 use App\Jobs\ProcessMail;
 use App\Models\Mailing;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 if (! function_exists('calculatePercentageOf')) {
     function calculatePercentageOf($number, $total)
@@ -138,5 +139,36 @@ if (! function_exists('generateUniqueNumber')) {
         } while (DB::connection('authuser')->table($table)->where($column, $number)->exists());
 
         return $number;
+    }
+}
+
+if (! function_exists('sortColumn')) {
+    function sortColumn($sort, $table)
+    {
+        if (! empty($sort)) {
+
+            $column = explode(',', $sort)[0] ?? 'created_at';
+            if (Schema::connection('transport')->hasColumn($table, $column)) {
+                return $column;
+            }
+        }
+
+        return 'created_at';
+    }
+
+}
+
+if (! function_exists('sortDirection')) {
+    function sortDirection($sort)
+    {
+        $direction = 'asc';
+        if (! empty($sort)) {
+
+            $direction = explode(',', $sort)[1] ?? 'asc';
+
+            return in_array($direction, ['asc', 'desc']) ? $direction : 'asc';
+        }
+
+        return $direction;
     }
 }
