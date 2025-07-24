@@ -3,17 +3,18 @@
 namespace App\Services;
 
 use App\Enums\Zones;
-use App\Http\Resources\TransportResource;
-use App\Http\Resources\UserResource;
-use App\Http\Resources\ZoneDataResource;
-use App\Models\State;
-use App\Models\TransitCompany;
 use App\Models\Trip;
-use App\Models\TripBooking;
+use App\Models\State;
 use App\Models\Vehicle;
+use App\Models\TripBooking;
 use App\Traits\HttpResponse;
-use App\Traits\TransportServiceTrait;
+use App\Models\TransitCompany;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\UserResource;
+use App\Traits\TransportServiceTrait;
+use App\Http\Resources\VehicleResource;
+use App\Http\Resources\ZoneDataResource;
+use App\Http\Resources\TransportResource;
 
 class TransportService
 {
@@ -28,6 +29,8 @@ class TransportService
     {
         $companies = TransitCompany::with(['union', 'unionState', 'vehicles'])
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'like', "%$search%"))
+            ->when(request('union'), fn($q, $union) => $q->where('union_id', $union))
+            ->when(request('status'), fn($q, $status) => $q->where('ev', $status))
             ->orderBy(sortColumn(request('sort'), 'transitCompanies'), sortDirection(request('sort')));
 
         return $this->withPagination(TransportResource::collection($companies->paginate(25)), 'Companies retrieved successfully');
@@ -47,14 +50,15 @@ class TransportService
             'drivers' => function ($q) {
                 return $q->with(['union', 'documents'])
                     ->withoutGlobalScope('zone')
-                    ->when(request('search'), fn ($q, $search) => $q->search($search));
+                    ->when(request('search'), fn ($q, $search) => $q->search($search))
+                    ->when(request('status', fn($q, $status) => $q->where('email_verified', $status)));
             },
         ])->findOrFail($company_id);
 
         return $this->success(UserResource::collection($company->drivers), 'Drivers retrieved successfully');
     }
 
-    public function getVehicles()
+    public function getVehicles($company_id)
     {
         $vehicles = Vehicle::with([
             'brand', 'company',
@@ -64,12 +68,12 @@ class TransportService
                     ->withoutGlobalScope('zone');
             },
         ])
-            ->where('company_id', request()->id)
+            ->where('company_id', $company_id)
             ->when(request('search'), fn ($q, $search) => $q->where('plate_no', $search))
             ->orderBy(sortColumn(request('sort'), 'vehicles'), sortDirection(request('sort')))
             ->paginate(25);
 
-        return $this->withPagination($vehicles->paginate(25)->toResourceCollection(), 'Vehicles retrieved successfully');
+        return $this->withPagination(VehicleResource::collection($vehicles), 'Vehicles retrieved successfully');
     }
 
     public function getVehicle($id)
@@ -218,6 +222,7 @@ class TransportService
             'departureState',
             'destinationState',
             'bookings' => fn ($q) => $q->withoutGlobalScope('zone'),
+            'confirmedBookings' => fn ($q) => $q->withoutGlobalScope('zone'),
         ])
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
             ->when(
@@ -258,7 +263,7 @@ class TransportService
                         });
                 });
             })
-            ->between(now()->startOfMonth(), now())
+            // ->between(now()->startOfMonth(), now())
             ->selectRaw('id, CONCAT(departure, destination) as route, departure, destination, means, COUNT(*) as trips_count')
             ->groupBy('route', 'id', 'departure', 'destination', 'means')
             ->orderBy('trips_count', 'desc');

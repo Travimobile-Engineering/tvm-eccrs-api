@@ -50,7 +50,7 @@ Route::middleware('validate.header')
                         Route::get('/{id}/detail', 'getCompanyDetails');
                         Route::get('/{id}/drivers', 'getDrivers');
                         Route::get('/vehicle/{id}/detail', 'getVehicle');
-                        Route::get('/{id}/vehicles', 'getVehicles');
+                        Route::get('/{company_id}/vehicles', 'getVehicles');
                         Route::get('/{id}/trips/{status?}', 'getTrips');
                         Route::get('/stats', 'getStats');
                         Route::get('/zone/{zone?}', 'getZoneData');
