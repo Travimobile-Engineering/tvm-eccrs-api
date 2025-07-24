@@ -19,7 +19,7 @@ class ZoneDataResource extends JsonResource
             'destination' => $this->destinationState?->name,
             'means' => $this->means,
             'passengers' => $this->bookings->count(),
-            'checkedIn_passengers' => $this->confirmedBookings->count(),
+            'checkedIn_passengers' => $this->bookings->sum(fn($b) => $b->confirmed_passengers_count),
             'trips' => $this->trips_count,
         ];
     }
