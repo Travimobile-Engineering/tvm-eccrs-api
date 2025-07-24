@@ -221,8 +221,7 @@ class TransportService
         $trips = Trip::with([
             'departureState',
             'destinationState',
-            'bookings' => fn ($q) => $q->withoutGlobalScope('zone'),
-            'confirmedBookings' => fn ($q) => $q->withoutGlobalScope('zone'),
+            'bookings' => fn ($q) => $q->withoutGlobalScope('zone')->withCount('confirmedPassengers'),
         ])
             ->when(request('mode'), fn ($q, $mode) => $q->where('means', $mode))
             ->when(
@@ -253,7 +252,7 @@ class TransportService
             })
             ->when(request('search'), function ($query, $search) use (&$states) {
 
-                $states = request('search');
+                $search = request('search');
                 $query->where(function ($query) use ($search) {
                     $query->whereHas('departureState', function ($query) use ($search) {
                         return $query->where('states.name', 'like', "%$search%");
@@ -263,7 +262,7 @@ class TransportService
                         });
                 });
             })
-            // ->between(now()->startOfMonth(), now())
+            ->between(now()->startOfMonth(), now())
             ->selectRaw('id, CONCAT(departure, destination) as route, departure, destination, means, COUNT(*) as trips_count')
             ->groupBy('route', 'id', 'departure', 'destination', 'means')
             ->orderBy('trips_count', 'desc');

@@ -105,6 +105,10 @@ class TripBooking extends Model
         return $this->hasMany(TripBookingPassenger::class);
     }
 
+    public function confirmedPassengers(){
+        return $this->hasMany(TripBookingPassenger::class)->where('on_seat', 1);
+    }
+
     #[Scope]
     protected function scopeCreatedBetween(Builder $query, $from, $to): void
     {
