@@ -23,6 +23,9 @@ class IncidentService
 
         $sql = [];
         $months = 6;
+        if(request('months')){
+            $months = intval(request('months'));
+        }
         $monthsName = [];
         $incidentCategories = IncidentCategory::cases();
 
