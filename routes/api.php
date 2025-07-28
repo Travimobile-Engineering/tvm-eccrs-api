@@ -149,6 +149,7 @@ Route::middleware('validate.header')
                         Route::get('/watchlist/list', 'list');
                         Route::get('/watchlist/{id}', 'getRecord');
                         Route::get('/transport-data', 'getTransportData');
+                        Route::get('/incident-data', 'getIncidentData');
                     });
 
                 // Other APIs
