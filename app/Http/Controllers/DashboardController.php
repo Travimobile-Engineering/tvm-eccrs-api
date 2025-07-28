@@ -35,4 +35,8 @@ class DashboardController extends Controller
     public function getIncidentData(){
         return $this->incidentService->getData();
     }
+
+    public function getIncidentDetail($id){
+        return $this->incidentService->getIncidentDetail($id);
+    }
 }

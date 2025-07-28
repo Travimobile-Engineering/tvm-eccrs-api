@@ -70,4 +70,17 @@ class IncidentService
         
         return $this->success($data, "hotspots retrieved successfully");
     }
+
+    public function getIncidentDetail($id){
+        $incident = Incident::where('incidents.id', $id)
+            ->join('states', 'states.id', '=', 'state_id')
+            ->select('status', 'category', 'type', DB::raw("CONCAT(date, ' ', time) as date"), DB::raw("CONCAT(city, ', ', name) as location"), 'description', 'severity_level', 'persons_of_interest')
+            ->first();
+
+        if(! $incident){
+            return $this->error(null, "Resource not found", 404);
+        }
+
+        return $this->success($incident, 'Incident detail retrieved successfully');
+    }
 }
