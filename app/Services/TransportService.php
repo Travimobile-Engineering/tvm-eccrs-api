@@ -51,7 +51,7 @@ class TransportService
                 return $q->with(['union', 'documents'])
                     ->withoutGlobalScope('zone')
                     ->when(request('search'), fn ($q, $search) => $q->search($search))
-                    ->when(request('status', fn($q, $status) => $q->where('email_verified', $status)));
+                    ->when(request('status'), fn($q, $status) => $q->where('email_verified', $status));
             },
         ])->findOrFail($company_id);
 
