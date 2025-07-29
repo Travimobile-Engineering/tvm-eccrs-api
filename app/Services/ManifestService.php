@@ -46,6 +46,7 @@ class ManifestService
                     ->whereYear('departure_date', now()->year)
                 );
             })
+            ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->filterByUserZone($user)
             ->orderBy(sortColumn(request('sort'), 'manifests'), sortDirection(request('sort')));
 
