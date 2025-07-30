@@ -151,6 +151,7 @@ Route::middleware('validate.header')
                         Route::get('/transport-data', 'getTransportData');
                         Route::get('/incident-data', 'getIncidentData');
                         Route::get('/incident/{id}', 'getIncidentDetail');
+                        Route::get('/', 'dashboard');
                     });
 
                 // Other APIs
