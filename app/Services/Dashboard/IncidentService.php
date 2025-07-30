@@ -71,7 +71,7 @@ class IncidentService
 
         $data[ 'live_incidents'] = $live_incidents;
         
-        return $this->success($data, "hotspots retrieved successfully");
+        return $this->success($data, "Incident data retrieved successfully");
     }
 
     public function getIncidentDetail($id){
