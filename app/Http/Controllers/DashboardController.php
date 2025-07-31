@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\Dashboard\Dashboard;
 use App\Services\Dashboard\IncidentService;
 use App\Services\Dashboard\TransportService;
 use App\Services\Dashboard\WatchlistService;
@@ -13,7 +14,8 @@ class DashboardController extends Controller
     public function __construct(
         protected WatchlistService $watchlistService,
         protected TransportService $transportService,
-        protected IncidentService $incidentService
+        protected IncidentService $incidentService,
+        protected Dashboard $dashboardService,
     ){}
 
     public function overview(){
@@ -38,5 +40,9 @@ class DashboardController extends Controller
 
     public function getIncidentDetail($id){
         return $this->incidentService->getIncidentDetail($id);
+    }
+
+    public function dashboard(){
+        return $this->dashboardService->dashboard();
     }
 }
