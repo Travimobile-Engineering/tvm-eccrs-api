@@ -24,16 +24,26 @@ class Dashboard
         $yesterday = now()->subDay()->startOfDay()->toDateString();
 
         $sql = [
-            DB::raw("COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as today"),
-            DB::raw("COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as yesterday"),
+            "COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as today",
+            "COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as yesterday",
         ];
 
         $passengersSQL = $manifestsSQL = $watchlistsSQL = $sql;
         $incidentsSQL = [
-            DB::raw("COUNT(CASE WHEN DATE(date) = ? THEN 1 END) as today"),
-            DB::raw("COUNT(CASE WHEN DATE(date) = ? THEN 1 END) as yesterday"),
+            "COUNT(CASE WHEN DATE(date) = ? THEN 1 END) as today",
+            "COUNT(CASE WHEN DATE(date) = ? THEN 1 END) as yesterday",
         ];
-        $bindings = [$today, $yesterday];
+        $passengerSqlBindings = [];
+        $manifestSqlBindings = [];
+        $watchlistSqlBindings = [];
+        $incidentSqlBindings = [];
+
+        for($i=0; $i < 4; $i++){
+            $passengerSqlBindings = [$today, $yesterday];
+            $manifestSqlBindings = [$today, $yesterday];
+            $watchlistSqlBindings = [$today, $yesterday];
+            $incidentSqlBindings = [$today, $yesterday];
+        }
 
         $zones = Zones::cases();
         foreach ($zones as $zone) {
@@ -50,28 +60,29 @@ class Dashboard
             $tripBookingIds = TripBooking::whereIn('trip_id', $tripIds)->pluck('id')->toArray();
             $stateIds = State::where('zone_id', $zoneID)->pluck('id')->toArray();
 
-            $passengersSQL[] = DB::raw(
-                "COUNT(CASE WHEN trip_booking_id IN (" . implode(',', $tripBookingIds ?: [0]) . ") THEN 1 END) as {$alias}_passengers"
-            );
-
-            $manifestsSQL[] = DB::raw(
-                "COUNT(CASE WHEN trip_id IN (" . implode(',', $tripIds ?: [0]) . ") THEN 1 END) as {$alias}_manifests"
-            );
-
-            $watchlistsSQL[] = DB::raw(
-                "COUNT(CASE WHEN state_id IN (" . implode(',', $stateIds ?: [0]) . ") THEN 1 END) as {$alias}_watchlists"
-            );
-
-            $incidentsSQL[] = DB::raw(
-                "COUNT(CASE WHEN state_id IN (" . implode(',', $stateIds ?: [0]) . ") THEN 1 END) as {$alias}_incidents"
-            );
+            $passengersSQL[] = "COUNT(CASE WHEN trip_booking_id IN (" . implode(',', $tripBookingIds ?: [0]) . ") AND DATE(created_at) = ? THEN 1 END) as {$alias}_passengers";
+            $passengerSqlBindings[] = $today;
+            $manifestsSQL[] = "COUNT(CASE WHEN trip_id IN (" . implode(',', $tripIds ?: [0]) . ") AND DATE(created_at) = ? THEN 1 END) as {$alias}_manifests";
+            $manifestSqlBindings[] = $today;
+            $watchlistsSQL[] = "COUNT(CASE WHEN state_id IN (" . implode(',', $stateIds ?: [0]) . ") AND DATE(created_at) = ? THEN 1 END) as {$alias}_watchlists";
+            $watchlistSqlBindings[] = $today;
+            $incidentsSQL[] = "COUNT(CASE WHEN state_id IN (" . implode(',', $stateIds ?: [0]) . ") AND DATE(date) = ? THEN 1 END) as {$alias}_incidents";
+            $incidentSqlBindings[] = $today;
         }
-
+        
         $db = [
-            'passengers' => TripBookingPassenger::select($passengersSQL)->addBinding($bindings)->first(),
-            'manifests' => Manifest::select($manifestsSQL)->addBinding($bindings)->first(),
-            'incidents' => Incident::select($incidentsSQL)->addBinding($bindings)->first(),
-            'watchlists' => WatchList::select($watchlistsSQL)->addBinding($bindings)->first(),
+            'passengers' => TripBookingPassenger::selectRaw(implode(',', $passengersSQL), $passengerSqlBindings)
+            ->whereHas('tripBooking.trip', function($query){
+                $query->when(request('mode'), fn($q, $m) => $q->where('means', $m));
+            })
+            ->first(),
+            'manifests' => Manifest::selectRaw(implode(',', $manifestsSQL), $manifestSqlBindings)
+            ->whereHas('trip', function($query){
+                $query->when(request('mode'), fn($q, $m) => $q->where('means', $m));
+            })
+            ->first(),
+            'incidents' => Incident::selectRaw(implode(',', $incidentsSQL), $incidentSqlBindings)->first(),
+            'watchlists' => WatchList::selectRaw(implode(',', $watchlistsSQL), $watchlistSqlBindings)->first(),
         ];
 
         $data = [];
