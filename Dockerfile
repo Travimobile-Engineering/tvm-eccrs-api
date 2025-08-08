@@ -3,6 +3,8 @@ FROM php:8.2-fpm
 
 WORKDIR /var/www
 
+ARG MAX_CHILDREN=40
+
 USER root
 
 RUN apt-get update && apt-get install -y libicu-dev \
@@ -10,6 +12,8 @@ RUN apt-get update && apt-get install -y libicu-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y bash
+
+RUN sed -i "s/^pm\.max_children\s*=.*/pm.max_children = ${MAX_CHILDREN}/" /usr/local/etc/php-fpm.d/www.conf
 
 RUN apt-get update && apt-get install -y net-tools
 
