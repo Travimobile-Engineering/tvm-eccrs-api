@@ -15,4 +15,8 @@ class WatchList extends Model
     {
         return $query->where('status', $status);
     }
+
+    public function state(){
+        return $this->belongsTo(State::class);
+    }
 }

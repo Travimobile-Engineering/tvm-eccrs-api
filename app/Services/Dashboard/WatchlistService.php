@@ -21,7 +21,7 @@ class WatchlistService
 
         $sql = ['
             COUNT(*) as total,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as lastMonthTotal,
+            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as lastMonthTotal
         '];
 
         foreach ($zones as $zone) {
@@ -85,12 +85,16 @@ class WatchlistService
         }
 
         $watchlist = Watchlist::when(! empty($states), function ($query, $states) {
-            $query->whereIn('alert_location', $states);
+            $query->whereHas('state', function($query) use ($states) {
+                $query->whereIn('name', $states);
+            });
         })
-            ->when(request('state'), function ($query, $state) {
-                $query->where('alert_location', $state);
-            })
-            ->paginate(25);
+        ->when(request('state'), function ($query, $state) {
+            $query->whereHas('state', function($query) use ($state) {
+                $query->where('name', $state);
+            });
+        })
+        ->paginate(25);
 
         return $this->withPagination(WatchlistResource::collection($watchlist), 'Watchlist records retrieved successfully');
 
@@ -99,7 +103,9 @@ class WatchlistService
     public function getRecord($id)
     {
         $record = User::fromWatchlist(Watchlist::findOrFail($id))->first();
-
+        if(! $record) {
+            return $this->error(null, 'Watchlist record not found', 404);
+        }
         return $this->success((new WatchlistResource($record)), 'Watchlist record retrieved successfully');
     }
 }
