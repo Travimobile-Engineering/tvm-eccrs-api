@@ -5,6 +5,7 @@ namespace App\Services\Dashboard;
 use App\Enums\Zones;
 use App\Models\TripBooking;
 use App\Traits\HttpResponse;
+use App\Models\TripBookingPassenger;
 
 class TransportService
 {
@@ -12,20 +13,24 @@ class TransportService
 
     public function getTransportData()
     {
-        $now = now();
-        $prevMonthStart =  $now->copy()->subMonth()->startOfMonth();
-        $prevMonthEnd = $now->copy()->subMonth()->endOfMonth();
+        $prevMonthStart =  now()->subMonth()->startOfMonth();
+        $prevMonthEnd = now()->subMonth()->endOfMonth();
+        $thisMonthStart = now()->startofMonth();
+        $thisMonthEnd = now()->endOfMonth();
+        
         $sql = [
             "COUNT(*) as total",
+            "COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as this_month_total",
             "COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as prev_month_total",
             "COUNT(CASE WHEN 
-                trip_id IN (
-                    SELECT id FROM trips WHERE means = 'road'
-                )
-                THEN 1 END
+                trip_booking_id IN(
+                    SELECT id FROM trip_bookings WHERE trip_id IN (
+                        SELECT id FROM trips WHERE means = 'road'
+                    )
+                ) THEN 1 END
             ) as total_road_count"
         ];
-        $bindings = [$prevMonthStart, $prevMonthEnd];
+        $bindings = [$thisMonthStart, $thisMonthEnd, $prevMonthStart, $prevMonthEnd];
         
         $zones = Zones::cases();
         foreach($zones as $zone){
@@ -38,18 +43,22 @@ class TransportService
                 
                 $sql[] = "
                     COUNT(CASE WHEN 
-                        trip_id IN (
-                            SELECT id FROM trips WHERE departure IN (
-                                SELECT id FROM states WHERE name in ('$states_string')
+                        trip_booking_id IN(
+                            SELECT id FROM trip_bookings WHERE trip_id IN (
+                                SELECT id FROM trips WHERE departure IN (
+                                    SELECT id FROM states WHERE name in ('$states_string')
+                                )
                             )
                         ) THEN 1 END
                     ) as {$zone_alias}_outbound_count";
                 
                 $sql[] = "
                     COUNT(CASE WHEN 
-                        trip_id IN (
-                            SELECT id FROM trips WHERE destination IN (
-                                SELECT id FROM states WHERE name in ('$states_string')
+                        trip_booking_id IN(
+                            SELECT id FROM trip_bookings WHERE trip_id IN (
+                                SELECT id FROM trips WHERE destination IN (
+                                    SELECT id FROM states WHERE name in ('$states_string')
+                                )
                             )
                         ) THEN 1 END
                     ) as {$zone_alias}_inbound_count";
@@ -59,34 +68,38 @@ class TransportService
                 $state_alias = $zone_alias . '_' . str_replace(' ', '_', $state);
 
                 $sql[] = "
-                    COUNT(CASE 
-                        WHEN trip_id IN (
-                            SELECT id FROM trips 
-                            WHERE destination = (
+                    COUNT(CASE WHEN 
+                    trip_booking_id IN(
+                        SELECT id FROM trip_bookings WHERE trip_id IN (
+                            SELECT id FROM trips  WHERE destination = (
                                 SELECT id FROM states WHERE name = '$state'
                             )
-                        ) THEN 1 END
-                    ) as {$state_alias}_inbound_count";
+                        )
+                    ) THEN 1 END
+                ) as {$state_alias}_inbound_count";
 
                 $sql[] = "
-                    COUNT(CASE 
-                        WHEN trip_id IN (
-                            SELECT id FROM trips 
-                            WHERE departure = (
+                    COUNT(CASE WHEN 
+                    trip_booking_id IN(
+                        SELECT id FROM trip_bookings WHERE trip_id IN (
+                            SELECT id FROM trips WHERE departure = (
                                 SELECT id FROM states WHERE name = '$state'
                             )
-                        ) THEN 1 END
-                    ) as {$state_alias}_outbound_count";
+                        )
+                    ) THEN 1 END
+                ) as {$state_alias}_outbound_count";
             }
         }
 
-        $bookings = TripBooking::selectRaw(implode(',', $sql), $bindings)
-            ->when(request('mode'), fn($q, $mode) => $q->whereHas('trip', fn($q) => $q->where('means', $mode)))
+        $bookings = TripBookingPassenger::selectRaw(implode(',', $sql), $bindings)
+            ->whereHas('tripBooking', function($query){
+                $query->when(request('mode'), fn($q, $mode) => $q->whereHas('trip', fn($q) => $q->where('means', $mode)));
+            })
             ->first();
         
         $data = [
             'total' => $bookings->total,
-            'percentDiff' => $bookings->percent_diff = calculatePercentageOf($bookings->total, $bookings->prev_month_total),
+            'percentDiff' => $bookings->percent_diff = calculatePercentageOf($bookings->this_month_total, $bookings->prev_month_total),
         ];
 
         foreach($zones as $zone){

@@ -31,7 +31,7 @@ class WatchlistService
         $user = User::fromWatchlist($record)->first();
         $record->setRelation('user', $user ?? null);
 
-        return $this->success($record->toResource(), 'Watchlist record fetched successfully');
+        return $this->success(new WatchlistResource($record), 'Watchlist record fetched successfully');
     }
 
     public function watchlistStats()
