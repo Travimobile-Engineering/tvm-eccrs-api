@@ -2,17 +2,18 @@
 
 namespace App\Services;
 
-use App\Enums\UserType;
 use App\Enums\Zones;
-use App\Http\Resources\UserResource;
-use App\Models\State;
-use App\Models\TransitCompany;
-use App\Models\TripBooking;
 use App\Models\User;
 use App\Models\Zone;
-use App\Services\Actions\UserActionService;
-use App\Traits\HttpResponse;
+use App\Models\State;
+use App\Enums\UserType;
 use App\Traits\UserTrait;
+use App\Models\TripBooking;
+use App\Traits\HttpResponse;
+use App\Models\TransitCompany;
+use App\Http\Resources\UserResource;
+use App\Models\TripBookingPassenger;
+use App\Services\Actions\UserActionService;
 
 class UserService
 {
@@ -76,7 +77,7 @@ class UserService
         $startThisMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
-        $bookingCounts = TripBooking::selectRaw('
+        $bookingCounts = TripBookingPassenger::selectRaw('
             COUNT(*) as totalBookings,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountLast,
             COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as tripCountThis',

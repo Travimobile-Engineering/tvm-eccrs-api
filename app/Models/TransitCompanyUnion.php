@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class TransitCompanyUnion extends Model
 {
-    //
+    protected $connection = 'transport';
 }

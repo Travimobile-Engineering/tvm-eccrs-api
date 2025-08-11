@@ -157,6 +157,7 @@ Route::middleware('validate.header')
                 // Other APIs
                 Route::get('/states', [GeneralController::class, 'getStates']);
                 Route::get('/zones', [GeneralController::class, 'getZones']);
+                Route::get('/transit-company-unions', [GeneralController::class, 'getTransitCompanyUnions']);
 
                 // Auth
                 Route::post('/auth/logout', [AuthController::class, 'logout']);

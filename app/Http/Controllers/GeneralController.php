@@ -19,4 +19,9 @@ class GeneralController extends Controller
     {
         return $this->service->getZones();
     }
+
+    public function getTransitCompanyUnions()
+    {
+        return $this->service->getTransitCompanyUnions();
+    }
 }
